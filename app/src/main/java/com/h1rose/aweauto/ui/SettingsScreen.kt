@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -47,6 +48,8 @@ fun SettingsScreen(onBack: (() -> Unit)?) {
     val adblock by Prefs.adblock.collectAsState()
     val lists by Prefs.filterLists.collectAsState()
     val adStatus by AdBlocker.status.collectAsState()
+    val maxHeight by Prefs.maxHeight.collectAsState()
+    val prefetch by Prefs.prefetch.collectAsState()
 
     Column(Modifier.fillMaxSize().background(AweColors.Background)) {
         Row(
@@ -78,6 +81,24 @@ fun SettingsScreen(onBack: (() -> Unit)?) {
                     description = service.optimizeSummary,
                     checked = flags[service.id] ?: true,
                     onChange = { Prefs.setOptimized(service, it) },
+                )
+            }
+            item { SectionLabel("通信と先読み") }
+            item {
+                ChoiceRow(
+                    title = "画質の上限",
+                    description = "低いほど同じ通信量で長く先読みでき、電波が弱くても止まりにくくなります",
+                    options = listOf(0 to "自動", 720 to "720p", 480 to "480p", 360 to "360p"),
+                    selected = maxHeight,
+                    onSelect = { Prefs.setMaxHeight(it) },
+                )
+            }
+            item {
+                SettingRow(
+                    title = "電波の良いうちに先読みする",
+                    description = "TVer は約 7 分、YouTube は約 2 分先まで読み込みます (標準はどちらも 20〜30 秒)",
+                    checked = prefetch,
+                    onChange = { Prefs.setPrefetch(it) },
                 )
             }
             item { SectionLabel("広告ブロック") }
@@ -121,6 +142,41 @@ fun SettingsScreen(onBack: (() -> Unit)?) {
                     action = "消去",
                     onClick = { Prefs.clearHistory() },
                 )
+            }
+        }
+    }
+}
+
+@Composable
+private fun <T> ChoiceRow(
+    title: String,
+    description: String,
+    options: List<Pair<T, String>>,
+    selected: T,
+    onSelect: (T) -> Unit,
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(16.dp))
+            .background(AweColors.Surface)
+            .padding(18.dp),
+    ) {
+        Text(title, color = AweColors.OnSurface, fontSize = 16.sp)
+        Text(description, color = AweColors.OnSurfaceDim, fontSize = 13.sp)
+        Spacer(Modifier.height(12.dp))
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            options.forEach { (value, label) ->
+                val on = value == selected
+                Box(
+                    Modifier
+                        .pressScale { onSelect(value) }
+                        .clip(RoundedCornerShape(50))
+                        .background(if (on) AweColors.Chip else AweColors.SurfaceHigh)
+                        .padding(horizontal = 18.dp, vertical = 8.dp),
+                ) {
+                    Text(label, color = if (on) AweColors.OnChip else AweColors.OnSurface, fontSize = 14.sp)
+                }
             }
         }
     }

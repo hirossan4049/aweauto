@@ -60,17 +60,24 @@ import androidx.compose.ui.viewinterop.AndroidView
 import com.h1rose.aweauto.adblock.AdBlocker
 import com.h1rose.aweauto.data.Prefs
 import com.h1rose.aweauto.data.StreamService
+import com.h1rose.aweauto.web.PlaybackConfig
 import com.h1rose.aweauto.web.SiteTweaks
 import com.h1rose.aweauto.web.UserAgents
 import kotlinx.coroutines.delay
 
 private val RailWidth = 64.dp
 
+/** 先読み ON のときに溜める秒数 (実際は各サイトのプレーヤーと MSE の容量上限で頭打ちになる) */
+private const val READAHEAD_SEC = 600
+
 @Composable
 fun WebScreen(route: Route.Web) {
     val optimizeFlags by Prefs.optimizeFlags.collectAsState()
     val optimized = optimizeFlags[route.service.id] ?: true
     val adblock by Prefs.adblock.collectAsState()
+    val maxHeight by Prefs.maxHeight.collectAsState()
+    val prefetch by Prefs.prefetch.collectAsState()
+    val playback = PlaybackConfig(maxHeight = maxHeight, readaheadSec = if (prefetch) READAHEAD_SEC else 0)
     var fullscreen by remember { mutableStateOf<Pair<View, WebChromeClient.CustomViewCallback>?>(null) }
     var webView by remember { mutableStateOf<WebView?>(null) }
     var currentUrl by remember(route) { mutableStateOf(route.url) }
@@ -87,7 +94,7 @@ fun WebScreen(route: Route.Web) {
 
     Box(Modifier.fillMaxSize().background(Color.Black)) {
         // 設定を切り替えたら WebView ごと作り直す (注入済みスクリプトを外す API が無いため)
-        key(route, optimized, adblock) {
+        key(route, optimized, adblock, playback) {
             AndroidView(
                 modifier = Modifier.fillMaxSize().padding(start = railWidth),
                 factory = { ctx ->
@@ -96,6 +103,7 @@ fun WebScreen(route: Route.Web) {
                         route,
                         optimized,
                         adblock,
+                        playback,
                         onFullscreen = { fullscreen = it },
                         onUrl = { currentUrl = it },
                     ).also {
@@ -157,11 +165,12 @@ private fun createWebView(
     route: Route.Web,
     optimized: Boolean,
     adblock: Boolean,
+    playback: PlaybackConfig,
     onFullscreen: (Pair<View, WebChromeClient.CustomViewCallback>?) -> Unit,
     onUrl: (String) -> Unit,
 ): WebView {
     val service = route.service
-    val tweaks = SiteTweaks(ctx, service, optimize = optimized, adblock = adblock)
+    val tweaks = SiteTweaks(ctx, service, optimize = optimized, adblock = adblock, playback = playback)
     val cookies = CookieManager.getInstance()
     if (optimized && service == StreamService.YOUTUBE) {
         // f6=400: ダークテーマ

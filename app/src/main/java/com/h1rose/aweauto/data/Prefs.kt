@@ -27,6 +27,11 @@ object Prefs {
     val adblock: StateFlow<Boolean> = _adblock.asStateFlow()
     private val _filterLists = MutableStateFlow<Set<FilterList>>(emptySet())
     val filterLists: StateFlow<Set<FilterList>> = _filterLists.asStateFlow()
+    /** 画質の上限 (縦の画素数)。0 なら自動 */
+    private val _maxHeight = MutableStateFlow(480)
+    val maxHeight: StateFlow<Int> = _maxHeight.asStateFlow()
+    private val _prefetch = MutableStateFlow(true)
+    val prefetch: StateFlow<Boolean> = _prefetch.asStateFlow()
     private val _history = MutableStateFlow<List<HistoryItem>>(emptyList())
     val history: StateFlow<List<HistoryItem>> = _history.asStateFlow()
 
@@ -35,7 +40,19 @@ object Prefs {
         optimize.value = StreamService.entries.associate { it.id to sp.getBoolean(optimizeKey(it), true) }
         _history.value = decodeHistory(sp.getString("history", null))
         _adblock.value = sp.getBoolean("adblock", true)
+        _maxHeight.value = sp.getInt("max_height", 480)
+        _prefetch.value = sp.getBoolean("prefetch", true)
         _filterLists.value = FilterList.entries.filter { sp.getBoolean(filterKey(it), it.defaultOn) }.toSet()
+    }
+
+    fun setMaxHeight(height: Int) {
+        sp.edit().putInt("max_height", height).apply()
+        _maxHeight.value = height
+    }
+
+    fun setPrefetch(enabled: Boolean) {
+        sp.edit().putBoolean("prefetch", enabled).apply()
+        _prefetch.value = enabled
     }
 
     fun setAdblock(enabled: Boolean) {

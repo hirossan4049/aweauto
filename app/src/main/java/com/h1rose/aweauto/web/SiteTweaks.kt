@@ -13,9 +13,22 @@ import org.json.JSONObject
  * - 「表示の最適化」ON: assets/css/<service>.css を <style id="aweauto-css"> として入れ、
  *   assets/js/<service>.js があれば実行する。YouTube は SPA で <head> を作り直すことがあるので、消されたら入れ直す。
  * - 「広告ブロック」ON: assets/js/adblock-<service>.js があれば実行する。
+ * - 画質の上限・先読み: assets/js/prefetch-<service>.js に window.__aweautoConfig で値を渡す。
  */
-class SiteTweaks(context: Context, private val service: StreamService, optimize: Boolean, adblock: Boolean) {
+class SiteTweaks(
+    context: Context,
+    private val service: StreamService,
+    optimize: Boolean,
+    adblock: Boolean,
+    playback: PlaybackConfig,
+) {
     private val script: String = buildString {
+        if (playback.maxHeight > 0 || playback.readaheadSec > 0) {
+            append("window.__aweautoConfig = ")
+            append(JSONObject().put("maxHeight", playback.maxHeight).put("readaheadSec", playback.readaheadSec))
+            append(";\n")
+            append(context.assetOrEmpty("js/prefetch-${service.id}.js")).append('\n')
+        }
         // 広告除去はプレーヤー設定を読み込む前に仕込む必要があるので先頭に置く
         if (adblock) append(context.assetOrEmpty("js/adblock-${service.id}.js")).append('\n')
         if (optimize) {
@@ -64,6 +77,9 @@ class SiteTweaks(context: Context, private val service: StreamService, optimize:
         return service.hosts.any { host == it || host.endsWith(".$it") }
     }
 }
+
+/** 通信が不安定な車内向けの再生設定。0 は「サイトに任せる」 */
+data class PlaybackConfig(val maxHeight: Int, val readaheadSec: Int)
 
 private fun Context.assetOrEmpty(path: String): String =
     runCatching { assets.open(path).bufferedReader().use { it.readText() } }.getOrDefault("")
