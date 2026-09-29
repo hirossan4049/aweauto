@@ -1,11 +1,11 @@
-package com.hirossan.aweauto.web
+package com.h1rose.aweauto.web
 
 import android.content.Context
 import android.net.Uri
 import android.webkit.WebView
 import androidx.webkit.WebViewCompat
 import androidx.webkit.WebViewFeature
-import com.hirossan.aweauto.data.StreamService
+import com.h1rose.aweauto.data.StreamService
 import org.json.JSONObject
 
 /**

@@ -1,4 +1,4 @@
-package com.hirossan.aweauto.ui
+package com.h1rose.aweauto.ui
 
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.clickable

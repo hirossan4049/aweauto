@@ -26,7 +26,7 @@ Android Auto の設定 → バージョンを 10 回タップして開発者モ�
 ```bash
 adb shell am start -a android.intent.action.SEND -t text/plain \
   --es android.intent.extra.TEXT "https://youtu.be/VIDEO_ID" \
-  -n com.hirossan.aweauto/.ShareActivity
+  -n com.h1rose.aweauto/.ShareActivity
 ```
 
 ## CSS の調整

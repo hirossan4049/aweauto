@@ -1,13 +1,13 @@
-package com.hirossan.aweauto
+package com.h1rose.aweauto
 
 import android.app.Activity
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
 import android.widget.Toast
-import com.hirossan.aweauto.data.StreamService
-import com.hirossan.aweauto.ui.AweNav
-import com.hirossan.aweauto.ui.Route
+import com.h1rose.aweauto.data.StreamService
+import com.h1rose.aweauto.ui.AweNav
+import com.h1rose.aweauto.ui.Route
 
 /**
  * スマホの YouTube / TVer アプリから「共有 → aweauto」で車の画面に送る。

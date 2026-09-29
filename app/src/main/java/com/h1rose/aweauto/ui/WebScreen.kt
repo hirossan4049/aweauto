@@ -1,4 +1,4 @@
-package com.hirossan.aweauto.ui
+package com.h1rose.aweauto.ui
 
 import android.annotation.SuppressLint
 import android.graphics.Bitmap
@@ -57,11 +57,11 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
-import com.hirossan.aweauto.adblock.AdBlocker
-import com.hirossan.aweauto.data.Prefs
-import com.hirossan.aweauto.data.StreamService
-import com.hirossan.aweauto.web.SiteTweaks
-import com.hirossan.aweauto.web.UserAgents
+import com.h1rose.aweauto.adblock.AdBlocker
+import com.h1rose.aweauto.data.Prefs
+import com.h1rose.aweauto.data.StreamService
+import com.h1rose.aweauto.web.SiteTweaks
+import com.h1rose.aweauto.web.UserAgents
 import kotlinx.coroutines.delay
 
 private val RailWidth = 64.dp

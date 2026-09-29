@@ -1,9 +1,9 @@
-package com.hirossan.aweauto.data
+package com.h1rose.aweauto.data
 
 import android.content.Context
 import android.content.SharedPreferences
-import com.hirossan.aweauto.adblock.AdBlocker
-import com.hirossan.aweauto.adblock.FilterList
+import com.h1rose.aweauto.adblock.AdBlocker
+import com.h1rose.aweauto.adblock.FilterList
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow

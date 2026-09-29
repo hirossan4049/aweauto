@@ -1,4 +1,4 @@
-package com.hirossan.aweauto.adblock
+package com.h1rose.aweauto.adblock
 
 import android.content.Context
 import android.util.Log

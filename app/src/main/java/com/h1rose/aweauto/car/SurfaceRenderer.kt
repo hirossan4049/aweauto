@@ -1,4 +1,4 @@
-package com.hirossan.aweauto.car
+package com.h1rose.aweauto.car
 
 import android.graphics.Rect
 import android.hardware.display.DisplayManager

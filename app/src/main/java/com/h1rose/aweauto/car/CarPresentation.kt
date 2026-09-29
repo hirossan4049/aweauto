@@ -1,4 +1,4 @@
-package com.hirossan.aweauto.car
+package com.h1rose.aweauto.car
 
 import android.app.Presentation
 import android.content.Context
@@ -20,8 +20,8 @@ import androidx.savedstate.SavedStateRegistryController
 import androidx.savedstate.SavedStateRegistryOwner
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
 import androidx.compose.ui.unit.dp
-import com.hirossan.aweauto.ui.AweRoot
-import com.hirossan.aweauto.ui.LocalTopEndReserve
+import com.h1rose.aweauto.ui.AweRoot
+import com.h1rose.aweauto.ui.LocalTopEndReserve
 
 /**
  * 車の Surface に紐づいた VirtualDisplay 上に出す画面。

@@ -1,4 +1,4 @@
-package com.hirossan.aweauto.ui
+package com.h1rose.aweauto.ui
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -47,11 +47,11 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil3.compose.AsyncImage
 import coil3.compose.rememberAsyncImagePainter
-import com.hirossan.aweauto.data.HistoryItem
-import com.hirossan.aweauto.data.Prefs
-import com.hirossan.aweauto.data.Shortcut
-import com.hirossan.aweauto.data.StreamService
-import com.hirossan.aweauto.data.shortcuts
+import com.h1rose.aweauto.data.HistoryItem
+import com.h1rose.aweauto.data.Prefs
+import com.h1rose.aweauto.data.Shortcut
+import com.h1rose.aweauto.data.StreamService
+import com.h1rose.aweauto.data.shortcuts
 import kotlinx.coroutines.delay
 import java.text.SimpleDateFormat
 import java.util.Date

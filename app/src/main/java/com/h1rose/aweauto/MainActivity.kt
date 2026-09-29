@@ -1,4 +1,4 @@
-package com.hirossan.aweauto
+package com.h1rose.aweauto
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -21,10 +21,10 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.hirossan.aweauto.ui.AweColors
-import com.hirossan.aweauto.ui.AweRoot
-import com.hirossan.aweauto.ui.AweTheme
-import com.hirossan.aweauto.ui.SettingsScreen
+import com.h1rose.aweauto.ui.AweColors
+import com.h1rose.aweauto.ui.AweRoot
+import com.h1rose.aweauto.ui.AweTheme
+import com.h1rose.aweauto.ui.SettingsScreen
 
 /** スマホ側の画面。車載 UI のプレビューと設定を並べる */
 class MainActivity : ComponentActivity() {

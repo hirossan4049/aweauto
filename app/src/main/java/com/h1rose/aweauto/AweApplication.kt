@@ -1,9 +1,9 @@
-package com.hirossan.aweauto
+package com.h1rose.aweauto
 
 import android.app.Application
 import android.webkit.WebView
-import com.hirossan.aweauto.adblock.AdBlocker
-import com.hirossan.aweauto.data.Prefs
+import com.h1rose.aweauto.adblock.AdBlocker
+import com.h1rose.aweauto.data.Prefs
 
 class AweApplication : Application() {
     override fun onCreate() {

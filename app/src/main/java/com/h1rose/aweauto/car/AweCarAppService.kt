@@ -1,4 +1,4 @@
-package com.hirossan.aweauto.car
+package com.h1rose.aweauto.car
 
 import android.content.Intent
 import androidx.car.app.CarAppService
@@ -12,8 +12,8 @@ import androidx.car.app.model.Template
 import androidx.car.app.navigation.model.NavigationTemplate
 import androidx.car.app.validation.HostValidator
 import androidx.core.graphics.drawable.IconCompat
-import com.hirossan.aweauto.R
-import com.hirossan.aweauto.ui.AweNav
+import com.h1rose.aweauto.R
+import com.h1rose.aweauto.ui.AweNav
 
 class AweCarAppService : CarAppService() {
     // サイドロード前提の個人用アプリなので接続元の検証はしない

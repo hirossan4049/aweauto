@@ -1,6 +1,6 @@
-package com.hirossan.aweauto.ui
+package com.h1rose.aweauto.ui
 
-import com.hirossan.aweauto.data.StreamService
+import com.h1rose.aweauto.data.StreamService
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow

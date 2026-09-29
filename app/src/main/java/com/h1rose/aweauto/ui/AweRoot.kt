@@ -1,4 +1,4 @@
-package com.hirossan.aweauto.ui
+package com.h1rose.aweauto.ui
 
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.fadeIn

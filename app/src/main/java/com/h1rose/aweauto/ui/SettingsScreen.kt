@@ -1,4 +1,4 @@
-package com.hirossan.aweauto.ui
+package com.h1rose.aweauto.ui
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -31,10 +31,10 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.hirossan.aweauto.adblock.AdBlocker
-import com.hirossan.aweauto.adblock.FilterList
-import com.hirossan.aweauto.data.Prefs
-import com.hirossan.aweauto.data.StreamService
+import com.h1rose.aweauto.adblock.AdBlocker
+import com.h1rose.aweauto.adblock.FilterList
+import com.h1rose.aweauto.data.Prefs
+import com.h1rose.aweauto.data.StreamService
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale

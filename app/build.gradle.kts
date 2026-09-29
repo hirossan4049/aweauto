@@ -5,11 +5,11 @@ plugins {
 }
 
 android {
-    namespace = "com.hirossan.aweauto"
+    namespace = "com.h1rose.aweauto"
     compileSdk = 35
 
     defaultConfig {
-        applicationId = "com.hirossan.aweauto"
+        applicationId = "com.h1rose.aweauto"
         minSdk = 28
         targetSdk = 35
         versionCode = 1

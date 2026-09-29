@@ -1,8 +1,8 @@
-package com.hirossan.aweauto.web
+package com.h1rose.aweauto.web
 
 import android.content.Context
 import android.webkit.WebSettings
-import com.hirossan.aweauto.data.UserAgentKind
+import com.h1rose.aweauto.data.UserAgentKind
 
 object UserAgents {
     /**
