@@ -44,7 +44,6 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -72,7 +71,6 @@ fun WebScreen(route: Route.Web) {
     val optimizeFlags by Prefs.optimizeFlags.collectAsState()
     val optimized = optimizeFlags[route.service.id] ?: true
     val adblock by Prefs.adblock.collectAsState()
-    var blockedCount by remember(route) { mutableIntStateOf(0) }
     var fullscreen by remember { mutableStateOf<Pair<View, WebChromeClient.CustomViewCallback>?>(null) }
     var webView by remember { mutableStateOf<WebView?>(null) }
     var currentUrl by remember(route) { mutableStateOf(route.url) }
@@ -98,7 +96,6 @@ fun WebScreen(route: Route.Web) {
                         route,
                         optimized,
                         adblock,
-                        onBlocked = { blockedCount++ },
                         onFullscreen = { fullscreen = it },
                         onUrl = { currentUrl = it },
                     ).also {
@@ -118,7 +115,6 @@ fun WebScreen(route: Route.Web) {
             SideRail(
                 service = route.service,
                 optimized = optimized,
-                blockedCount = if (adblock) blockedCount else null,
                 translucent = immersive,
                 onBack = { railPeek = false; AweNav.back() },
                 onHome = { AweNav.home() },
@@ -161,7 +157,6 @@ private fun createWebView(
     route: Route.Web,
     optimized: Boolean,
     adblock: Boolean,
-    onBlocked: () -> Unit,
     onFullscreen: (Pair<View, WebChromeClient.CustomViewCallback>?) -> Unit,
     onUrl: (String) -> Unit,
 ): WebView {
@@ -200,7 +195,6 @@ private fun createWebView(
                 if (!adblock) return null
                 val host = request.url.host ?: return null
                 if (!AdBlocker.isBlocked(host)) return null
-                view.post(onBlocked)
                 // 空のレスポンスを返して読み込ませない
                 return WebResourceResponse("text/plain", "utf-8", 204, "Blocked", emptyMap(), null)
             }
@@ -252,8 +246,6 @@ private fun youtubeVideoId(url: String?): String? {
 private fun SideRail(
     service: StreamService,
     optimized: Boolean,
-    /** 広告ブロック OFF なら null */
-    blockedCount: Int?,
     translucent: Boolean,
     onBack: () -> Unit,
     onHome: () -> Unit,
@@ -283,10 +275,6 @@ private fun SideRail(
         RailButton(Icons.Filled.Home, "ホーム", onClick = onHome)
         RailButton(Icons.Filled.Refresh, "再読込", onClick = onReload)
         Spacer(Modifier.weight(1f))
-        if (blockedCount != null) {
-            Text("広告", color = AweColors.OnSurfaceDim, fontSize = 10.sp)
-            Text("$blockedCount", color = AweColors.Accent, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
-        }
         if (optimized) {
             Text("最適化", color = AweColors.Accent, fontSize = 10.sp)
         }
