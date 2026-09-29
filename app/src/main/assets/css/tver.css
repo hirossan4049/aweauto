@@ -1,0 +1,52 @@
+/* aweauto: tver.jp (PC 版) を車載画面向けに調整 */
+/* クラス名は CSS Modules のハッシュ付きなので、前半一致 ([class*="Name_"]) で当てる */
+
+html[data-aweauto] {
+  color-scheme: dark;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* ---- ダークテーマ (Google TV の配色に合わせる) ---- */
+html[data-aweauto],
+html[data-aweauto] body,
+[class*="AppLayout_app__"] {
+  background: #111318 !important;
+  color: #e3e3e8 !important;
+}
+[class*="AppLayout_header__"] {
+  background: #111318 !important;
+  box-shadow: none !important;
+  border-bottom: 1px solid #2a2d36 !important;
+}
+[class*="AppLayout_header__"] svg,
+[class*="AppLayout_header__"] button {
+  color: #e3e3e8 !important;
+  fill: currentColor;
+}
+[class*="ComponentCaption_caption__"],
+[class*="ComponentCaption_caption__"] *,
+[class*="BillboardList_info__"],
+[class*="BillboardList_info__"] *,
+[class*="Title_root__"],
+[class*="SubTitle_root__"],
+[class*="TalentList_name__"] {
+  color: #e3e3e8 !important;
+}
+[class*="SubInfo_root__"] {
+  color: #9aa0ac !important;
+}
+
+/* ---- カードの角丸を Google TV 風に ---- */
+[class*="Carousel_carousel__"] img,
+[class*="Thumbnail_"] img,
+[class*="Thumbnail_"] {
+  border-radius: 10px !important;
+}
+
+/* ---- アプリ誘導・フッター ---- */
+[class*="AppBanner"],
+[class*="appBanner"],
+[class*="AppDownload"],
+[class*="Footer_footer__"] {
+  display: none !important;
+}

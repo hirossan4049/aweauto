@@ -1,0 +1,116 @@
+/* aweauto: m.youtube.com を車載画面 (横長・タッチのみ) 向けに調整 */
+
+html[data-aweauto] {
+  color-scheme: dark;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* ---- 広告・アプリ誘導・通知バナー ---- */
+ytm-promoted-sparkles-web-renderer,
+ytm-promoted-video-renderer,
+ytm-companion-ad-renderer,
+ad-slot-renderer,
+ytm-ad-slot-renderer,
+ytm-statement-banner-renderer,
+ytm-mealbar-promo-renderer,
+.mealbar-promo-renderer,
+ytm-paid-content-overlay-renderer,
+ytm-upsell-dialog-renderer,
+.open-app-button,
+ytm-mobile-topbar-renderer ytm-button-renderer.icon-avatar_logged_out {
+  display: none !important;
+}
+
+/* ショート動画は車で見るものではないので棚ごと隠す */
+ytm-reel-shelf-renderer,
+ytm-shorts-lockup-view-model,
+ytm-rich-section-renderer:has(ytm-shorts-lockup-view-model) {
+  display: none !important;
+}
+
+/* 下のタブバーは高さを食うので隠す (ホーム等は左のレールとピックアップから) */
+ytm-pivot-bar-renderer {
+  display: none !important;
+}
+
+/* ---- 検索結果などの縦リストを Google TV 風の 3 列グリッドに ---- */
+ytm-item-section-renderer > lazy-list {
+  display: grid !important;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 20px 14px;
+  padding: 12px 16px 24px;
+}
+ytm-item-section-renderer > lazy-list > * {
+  margin: 0 !important;
+  min-width: 0;
+}
+/* 動画以外 (見出しや棚) は横幅いっぱいに */
+ytm-item-section-renderer > lazy-list > :not(ytm-video-with-context-renderer):not(ytm-compact-radio-renderer):not(ytm-compact-playlist-renderer) {
+  grid-column: 1 / -1;
+}
+ytm-item-section-renderer > lazy-list ytm-media-item {
+  flex-direction: column !important;
+  padding: 0 !important;
+}
+ytm-item-section-renderer > lazy-list a.media-item-thumbnail-container,
+ytm-item-section-renderer > lazy-list .compact-media-item-image {
+  width: 100% !important;
+  max-width: none !important;
+  margin: 0 !important;
+}
+ytm-item-section-renderer > lazy-list ytm-thumbnail-cover,
+ytm-item-section-renderer > lazy-list .video-thumbnail-container-large {
+  width: 100% !important;
+  height: auto !important;
+  aspect-ratio: 16 / 9;
+  border-radius: 12px !important;
+  overflow: hidden;
+}
+ytm-item-section-renderer > lazy-list ytm-thumbnail-cover img {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover;
+}
+ytm-item-section-renderer > lazy-list .media-item-details {
+  width: 100% !important;
+  padding: 8px 0 0 !important;
+}
+ytm-item-section-renderer > lazy-list .media-channel {
+  display: none !important;
+}
+ytm-item-section-renderer > lazy-list .media-item-headline {
+  font-size: 14px !important;
+  line-height: 19px !important;
+  display: -webkit-box !important;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* ---- 視聴ページ: ヘッダーを隠してプレーヤーを画面いっぱいに ---- */
+html.watch-scroll ytm-mobile-topbar-renderer,
+html.watch-scroll .mobile-topbar-header-background {
+  display: none !important;
+}
+html.watch-scroll #player-container-id {
+  top: 0 !important;
+  height: 100vh !important;
+}
+html.watch-scroll #player-container-id #player,
+html.watch-scroll #movie_player {
+  height: 100vh !important;
+  padding-bottom: 0 !important;
+}
+html.watch-scroll .player-size.player-placeholder {
+  padding-bottom: 100vh !important;
+}
+html.watch-scroll #movie_player .html5-video-container {
+  height: 100% !important;
+}
+html.watch-scroll #movie_player video.html5-main-video {
+  top: 0 !important;
+  left: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: contain !important;
+}
