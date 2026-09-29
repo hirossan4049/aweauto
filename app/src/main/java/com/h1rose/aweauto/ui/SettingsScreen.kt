@@ -24,6 +24,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.outlined.Cast
+import androidx.compose.material.icons.outlined.Extension
 import androidx.compose.material.icons.outlined.History
 import androidx.compose.material.icons.outlined.Shield
 import androidx.compose.material.icons.outlined.SignalCellularAlt
@@ -53,6 +54,8 @@ import com.h1rose.aweauto.cast.CastStatus
 import com.h1rose.aweauto.cast.LoungeReceiver
 import com.h1rose.aweauto.data.Prefs
 import com.h1rose.aweauto.data.StreamService
+import com.h1rose.aweauto.shizuku.ShizukuState
+import com.h1rose.aweauto.shizuku.ShizukuStatus
 import com.h1rose.aweauto.web.HlsCacheStore
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -155,6 +158,25 @@ fun SettingsScreen(onBack: (() -> Unit)?) {
                     description = "プレーヤーの先読みを約 30 秒から約 2 分に増やします。YouTube は丸ごとの先読みができません",
                     checked = prefetch,
                     onChange = { Prefs.setPrefetch(it) },
+                )
+            }
+            item { SectionLabel("拡張 (Shizuku)", Icons.Outlined.Extension) }
+            item {
+                val status by ShizukuState.status.collectAsState()
+                ActionRow(
+                    title = "Shizuku",
+                    description = when (status) {
+                        ShizukuStatus.READY -> "接続済み"
+                        ShizukuStatus.NO_PERMISSION -> "起動中。aweauto への許可が必要です"
+                        ShizukuStatus.NOT_RUNNING -> "未起動。スマホの再起動後は PC から起動コマンドを実行してください"
+                    },
+                    action = when (status) {
+                        ShizukuStatus.NO_PERMISSION -> "許可"
+                        else -> "再確認"
+                    },
+                    onClick = {
+                        if (status == ShizukuStatus.NO_PERMISSION) ShizukuState.requestPermission() else ShizukuState.refresh()
+                    },
                 )
             }
             item { SectionLabel("広告ブロック", Icons.Outlined.Shield) }

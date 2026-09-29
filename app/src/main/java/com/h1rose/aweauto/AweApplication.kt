@@ -7,6 +7,7 @@ import com.h1rose.aweauto.cast.CastBridge
 import com.h1rose.aweauto.cast.DialServer
 import com.h1rose.aweauto.cast.LoungeReceiver
 import com.h1rose.aweauto.data.Prefs
+import com.h1rose.aweauto.shizuku.ShizukuState
 
 class AweApplication : Application() {
     override fun onCreate() {
@@ -20,6 +21,7 @@ class AweApplication : Application() {
             DialServer.start(this)
         }
         ShareTargets.publish(this)
+        ShizukuState.init()
         // chrome://inspect から WebView の DOM を覗けるようにしておく (CSS 調整用)
         if (BuildConfig.DEBUG) WebView.setWebContentsDebuggingEnabled(true)
     }
