@@ -90,8 +90,8 @@ object Prefs {
         val prev = _history.value.firstOrNull { it.videoId == videoId }
         val item = HistoryItem(
             videoId = videoId,
-            // 遷移直後はタイトルが取れていないことがあるので、既知のタイトルを残す
-            title = title?.takeIf { it.isNotBlank() } ?: prev?.title ?: "",
+            // 遷移直後はタイトルが「YouTube」だけのことがあるので、既知のタイトルを残す
+            title = title?.takeIf { it.isNotBlank() && it != "YouTube" } ?: prev?.title ?: "",
             watchedAt = System.currentTimeMillis(),
         )
         val next = (listOf(item) + _history.value.filter { it.videoId != videoId }).take(MAX_HISTORY)

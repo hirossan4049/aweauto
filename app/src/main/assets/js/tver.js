@@ -31,3 +31,15 @@
   answer();
   new MutationObserver(answer).observe(document.documentElement, { childList: true, subtree: true });
 })();
+
+(function () {
+  // 番組ページのサムネイル上の再生ボタンを自動で押す (アプリ側の読み込み画面から直接再生に入るため)
+  var clicked = null;
+  setInterval(function () {
+    var button = document.querySelector('[class*="PlayerThumbnail_playButton"]');
+    if (button && clicked !== location.pathname) {
+      clicked = location.pathname;
+      button.click();
+    }
+  }, 500);
+})();

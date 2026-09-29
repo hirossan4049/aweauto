@@ -6,6 +6,7 @@ import android.net.Uri
 import android.view.View
 import android.view.ViewGroup
 import android.webkit.CookieManager
+import android.webkit.JavascriptInterface
 import android.webkit.PermissionRequest
 import android.webkit.WebChromeClient
 import android.webkit.WebView
@@ -22,6 +23,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
@@ -36,6 +38,7 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -50,13 +53,17 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
+import coil3.compose.AsyncImage
 import com.h1rose.aweauto.adblock.AdBlocker
 import com.h1rose.aweauto.cast.CastBridge
 import com.h1rose.aweauto.data.Prefs
@@ -85,6 +92,12 @@ fun WebScreen(route: Route.Web) {
     // 再生ページではレールを隠して動画を横幅いっぱいに出す。左端のつまみで一時的に呼び出せる
     val immersive = isPlaybackUrl(currentUrl)
     var railPeek by remember { mutableStateOf(false) }
+    // 再生が始まるまでは自前の読み込み画面を重ねる (WebView の灰色のプレースホルダーを見せない)
+    var videoStarted by remember(currentUrl) { mutableStateOf(false) }
+    LaunchedEffect(currentUrl) {
+        delay(15_000)
+        videoStarted = true
+    }
     LaunchedEffect(railPeek) {
         if (railPeek) {
             delay(4_000)
@@ -107,6 +120,7 @@ fun WebScreen(route: Route.Web) {
                         playback,
                         onFullscreen = { fullscreen = it },
                         onUrl = { currentUrl = it },
+                        onVideoPlaying = { videoStarted = true },
                     ).also {
                         webView = it
                         it.loadUrl(route.url)
@@ -117,6 +131,14 @@ fun WebScreen(route: Route.Web) {
                     it.destroy()
                 },
             )
+        }
+
+        AnimatedVisibility(
+            visible = immersive && !videoStarted,
+            enter = fadeIn(),
+            exit = fadeOut(),
+        ) {
+            LoadingCover(currentUrl, onDismiss = { videoStarted = true })
         }
 
         AnimatedVisibility(
@@ -172,6 +194,7 @@ private fun createWebView(
     playback: PlaybackConfig,
     onFullscreen: (Pair<View, WebChromeClient.CustomViewCallback>?) -> Unit,
     onUrl: (String) -> Unit,
+    onVideoPlaying: () -> Unit,
 ): WebView {
     val service = route.service
     val tweaks = SiteTweaks(ctx, service, optimize = optimized, adblock = adblock, playback = playback)
@@ -195,6 +218,15 @@ private fun createWebView(
         }
         tweaks.install(this)
         if (service == StreamService.YOUTUBE) CastBridge.attach(this)
+        addJavascriptInterface(
+            object {
+                @JavascriptInterface
+                fun onPlaying() {
+                    post(onVideoPlaying)
+                }
+            },
+            "AweVideo",
+        )
 
         webViewClient = object : WebViewClient() {
             override fun onPageStarted(view: WebView, url: String?, favicon: Bitmap?) {
@@ -224,6 +256,10 @@ private fun createWebView(
                 Prefs.recordWatch(id, title?.removeSuffix(" - YouTube"))
             }
 
+            // 再生前に出る灰色の「動画」アイコンを透明にする
+            override fun getDefaultVideoPoster(): Bitmap =
+                Bitmap.createBitmap(1, 1, Bitmap.Config.ARGB_8888)
+
             override fun onShowCustomView(view: View, callback: CustomViewCallback) {
                 onFullscreen(view to callback)
             }
@@ -236,6 +272,67 @@ private fun createWebView(
                 // TVer の DRM 付き番組向け
                 val allowed = request.resources.filter { it == PermissionRequest.RESOURCE_PROTECTED_MEDIA_ID }
                 if (allowed.isNotEmpty()) request.grant(allowed.toTypedArray()) else request.deny()
+            }
+        }
+    }
+}
+
+/** 再生ページで動画のサムネイルとして使う画像 */
+private fun posterFor(url: String): String? {
+    youtubeVideoId(url)?.let { return "https://i.ytimg.com/vi/$it/hqdefault.jpg" }
+    val uri = Uri.parse(url)
+    if (uri.host?.endsWith("tver.jp") == true && uri.path.orEmpty().startsWith("/episodes/")) {
+        return "https://statics.tver.jp/images/content/thumbnail/episode/large/${uri.lastPathSegment}.jpg"
+    }
+    return null
+}
+
+/** 再生が始まるまで重ねる Google TV 風の読み込み画面。触ると閉じて下のページを操作できる */
+@Composable
+private fun LoadingCover(url: String, onDismiss: () -> Unit) {
+    val history by Prefs.history.collectAsState()
+    val title = youtubeVideoId(url)?.let { id -> history.firstOrNull { it.videoId == id }?.title }
+    Box(
+        Modifier
+            .fillMaxSize()
+            .background(AweColors.Background)
+            .pressScale(onDismiss),
+    ) {
+        posterFor(url)?.let { poster ->
+            AsyncImage(
+                model = poster,
+                contentDescription = null,
+                contentScale = ContentScale.Crop,
+                modifier = Modifier.fillMaxSize(),
+            )
+        }
+        Box(
+            Modifier.fillMaxSize().background(
+                Brush.verticalGradient(0f to Color(0x66111318), 0.6f to Color(0xCC111318), 1f to Color(0xF2111318))
+            )
+        )
+        Column(
+            modifier = Modifier.align(Alignment.BottomStart).padding(start = 40.dp, end = 40.dp, bottom = 32.dp),
+        ) {
+            if (!title.isNullOrBlank()) {
+                Text(
+                    title,
+                    color = Color.White,
+                    fontSize = 22.sp,
+                    fontWeight = FontWeight.Bold,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                Spacer(Modifier.height(12.dp))
+            }
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                CircularProgressIndicator(
+                    modifier = Modifier.size(20.dp),
+                    color = AweColors.Accent,
+                    strokeWidth = 2.dp,
+                )
+                Spacer(Modifier.width(12.dp))
+                Text("読み込み中…", color = AweColors.OnSurfaceDim, fontSize = 15.sp)
             }
         }
     }
