@@ -35,7 +35,7 @@ enum class StreamService(
         // スマホ用 Web は「アプリで見てね」になって再生できないので PC 版を開く
         userAgent = UserAgentKind.DESKTOP,
         brand = Color(0xFF12A4E8),
-        optimizeSummary = "ダークテーマ・角丸カード。アプリ誘導/フッターを隠す",
+        optimizeSummary = "ダークテーマ・全画面プレーヤー・再生前アンケートにダミー値で自動回答。アプリ誘導/フッターを隠す",
     );
 
     companion object {

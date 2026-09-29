@@ -47,6 +47,28 @@ html[data-aweauto] body,
 [class*="AppBanner"],
 [class*="appBanner"],
 [class*="AppDownload"],
-[class*="Footer_footer__"] {
+[class*="Footer_footer__"],
+[class*="AppLayout_breadcrumb__"] {
   display: none !important;
+}
+
+/* ---- 番組ページ: ヘッダーを隠してプレーヤーを画面の高さに収める ---- */
+html[data-aweauto]:has([class*="Episode_player__"]) [class*="AppLayout_header__"] {
+  display: none !important;
+}
+/* ヘッダー分の行 (50px) がグリッドに固定で確保されているので自動に戻す */
+html[data-aweauto]:has([class*="Episode_player__"]) [class*="AppLayout_app__"] {
+  grid-template-rows: none !important;
+}
+[class*="Episode_player__"] [class*="PlayerLayout_aspectRatioWrapper__"] {
+  height: 100vh !important;
+  padding-top: 0 !important;
+  aspect-ratio: auto !important;
+}
+[class*="Episode_player__"] .video-js {
+  height: 100vh !important;
+  padding-top: 0 !important;
+}
+[class*="Episode_player__"] video.vjs-tech {
+  object-fit: contain !important;
 }
