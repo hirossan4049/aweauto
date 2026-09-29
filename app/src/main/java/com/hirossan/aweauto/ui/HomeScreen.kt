@@ -46,6 +46,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil3.compose.AsyncImage
+import coil3.compose.rememberAsyncImagePainter
 import com.hirossan.aweauto.data.HistoryItem
 import com.hirossan.aweauto.data.Prefs
 import com.hirossan.aweauto.data.Shortcut
@@ -189,6 +190,8 @@ private fun Hero(latest: HistoryItem?) {
             AsyncImage(
                 model = latest.heroImageUrl,
                 contentDescription = null,
+                // 古い動画には高解像度サムネが無いので通常サイズに落とす
+                error = rememberAsyncImagePainter(latest.thumbnailUrl),
                 contentScale = ContentScale.Crop,
                 modifier = Modifier.fillMaxSize(),
             )

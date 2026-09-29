@@ -1,0 +1,22 @@
+# aweauto: フィルタリストを取得する前でも効く最低限のブロック対象
+# (サブドメインも含めてブロックされる)
+doubleclick.net
+googlesyndication.com
+googleadservices.com
+adservice.google.com
+pagead2.googlesyndication.com
+google-analytics.com
+googletagservices.com
+amazon-adsystem.com
+adnxs.com
+criteo.com
+criteo.net
+taboola.com
+outbrain.com
+scorecardresearch.com
+i-mobile.co.jp
+microad.jp
+logly.co.jp
+ad-stir.com
+fluct.jp
+adingo.jp

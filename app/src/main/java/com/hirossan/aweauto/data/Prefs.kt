@@ -2,6 +2,8 @@ package com.hirossan.aweauto.data
 
 import android.content.Context
 import android.content.SharedPreferences
+import com.hirossan.aweauto.adblock.AdBlocker
+import com.hirossan.aweauto.adblock.FilterList
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -21,6 +23,10 @@ object Prefs {
     private lateinit var sp: SharedPreferences
 
     private val optimize = MutableStateFlow<Map<String, Boolean>>(emptyMap())
+    private val _adblock = MutableStateFlow(true)
+    val adblock: StateFlow<Boolean> = _adblock.asStateFlow()
+    private val _filterLists = MutableStateFlow<Set<FilterList>>(emptySet())
+    val filterLists: StateFlow<Set<FilterList>> = _filterLists.asStateFlow()
     private val _history = MutableStateFlow<List<HistoryItem>>(emptyList())
     val history: StateFlow<List<HistoryItem>> = _history.asStateFlow()
 
@@ -28,6 +34,19 @@ object Prefs {
         sp = context.getSharedPreferences("aweauto", Context.MODE_PRIVATE)
         optimize.value = StreamService.entries.associate { it.id to sp.getBoolean(optimizeKey(it), true) }
         _history.value = decodeHistory(sp.getString("history", null))
+        _adblock.value = sp.getBoolean("adblock", true)
+        _filterLists.value = FilterList.entries.filter { sp.getBoolean(filterKey(it), it.defaultOn) }.toSet()
+    }
+
+    fun setAdblock(enabled: Boolean) {
+        sp.edit().putBoolean("adblock", enabled).apply()
+        _adblock.value = enabled
+    }
+
+    fun setFilterList(list: FilterList, enabled: Boolean) {
+        sp.edit().putBoolean(filterKey(list), enabled).apply()
+        _filterLists.value = if (enabled) _filterLists.value + list else _filterLists.value - list
+        AdBlocker.onListsChanged(_filterLists.value)
     }
 
     val optimizeFlags: StateFlow<Map<String, Boolean>> get() = optimize.asStateFlow()
@@ -58,6 +77,7 @@ object Prefs {
     }
 
     private fun optimizeKey(service: StreamService) = "optimize_${service.id}"
+    private fun filterKey(list: FilterList) = "filter_${list.id}"
 
     private fun encodeHistory(items: List<HistoryItem>): String = JSONArray().apply {
         items.forEach {

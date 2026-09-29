@@ -31,14 +31,22 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.hirossan.aweauto.adblock.AdBlocker
+import com.hirossan.aweauto.adblock.FilterList
 import com.hirossan.aweauto.data.Prefs
 import com.hirossan.aweauto.data.StreamService
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 /** 車載画面とスマホの両方で使う設定画面。[onBack] が null なら戻るボタンを出さない */
 @Composable
 fun SettingsScreen(onBack: (() -> Unit)?) {
     val flags by Prefs.optimizeFlags.collectAsState()
     val history by Prefs.history.collectAsState()
+    val adblock by Prefs.adblock.collectAsState()
+    val lists by Prefs.filterLists.collectAsState()
+    val adStatus by AdBlocker.status.collectAsState()
 
     Column(Modifier.fillMaxSize().background(AweColors.Background)) {
         Row(
@@ -72,31 +80,74 @@ fun SettingsScreen(onBack: (() -> Unit)?) {
                     onChange = { Prefs.setOptimized(service, it) },
                 )
             }
-            item { SectionLabel("履歴") }
+            item { SectionLabel("広告ブロック") }
             item {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clip(RoundedCornerShape(16.dp))
-                        .background(AweColors.Surface)
-                        .padding(18.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Column(Modifier.weight(1f)) {
-                        Text("再生履歴を消去", color = AweColors.OnSurface, fontSize = 16.sp)
-                        Text("${history.size} 件", color = AweColors.OnSurfaceDim, fontSize = 13.sp)
-                    }
-                    Box(
-                        Modifier
-                            .pressScale { Prefs.clearHistory() }
-                            .clip(RoundedCornerShape(50))
-                            .background(AweColors.SurfaceHigh)
-                            .padding(horizontal = 18.dp, vertical = 8.dp),
-                    ) {
-                        Text("消去", color = AweColors.OnSurface, fontSize = 14.sp)
-                    }
+                SettingRow(
+                    title = "広告ブロック",
+                    description = "フィルタリストに載っているドメインへの通信を止め、YouTube の動画広告を取り除きます",
+                    checked = adblock,
+                    onChange = { Prefs.setAdblock(it) },
+                )
+            }
+            if (adblock) {
+                items(FilterList.entries) { list ->
+                    SettingRow(
+                        title = list.label,
+                        description = list.description,
+                        checked = list in lists,
+                        onChange = { Prefs.setFilterList(list, it) },
+                    )
+                }
+                item {
+                    ActionRow(
+                        title = "フィルタリストを更新",
+                        description = when {
+                            adStatus.updating -> "更新中…"
+                            adStatus.error != null -> adStatus.error!!
+                            adStatus.lastUpdated == 0L -> "${adStatus.domainCount} ドメイン (未取得)"
+                            else -> "${adStatus.domainCount} ドメイン ・ " +
+                                SimpleDateFormat("M/d H:mm", Locale.JAPAN).format(Date(adStatus.lastUpdated)) + " 更新"
+                        },
+                        action = "更新",
+                        onClick = { AdBlocker.update(lists) },
+                    )
                 }
             }
+            item { SectionLabel("履歴") }
+            item {
+                ActionRow(
+                    title = "再生履歴を消去",
+                    description = "${history.size} 件",
+                    action = "消去",
+                    onClick = { Prefs.clearHistory() },
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun ActionRow(title: String, description: String, action: String, onClick: () -> Unit) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(16.dp))
+            .background(AweColors.Surface)
+            .padding(18.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Column(Modifier.weight(1f)) {
+            Text(title, color = AweColors.OnSurface, fontSize = 16.sp)
+            Text(description, color = AweColors.OnSurfaceDim, fontSize = 13.sp)
+        }
+        Box(
+            Modifier
+                .pressScale(onClick)
+                .clip(RoundedCornerShape(50))
+                .background(AweColors.SurfaceHigh)
+                .padding(horizontal = 18.dp, vertical = 8.dp),
+        ) {
+            Text(action, color = AweColors.OnSurface, fontSize = 14.sp)
         }
     }
 }

@@ -23,6 +23,12 @@ html[data-aweauto] body,
   color: #e3e3e8 !important;
   fill: currentColor;
 }
+/* 横幅 800px 以上で出るサイドナビ */
+[class*="AppLayout_navigation__"] {
+  background: #1b1d24 !important;
+  border-color: #2a2d36 !important;
+}
+[class*="AppLayout_navigation__"] *,
 [class*="ComponentCaption_caption__"],
 [class*="ComponentCaption_caption__"] *,
 [class*="BillboardList_info__"],
@@ -53,12 +59,13 @@ html[data-aweauto] body,
 }
 
 /* ---- 番組ページ: ヘッダーを隠してプレーヤーを画面の高さに収める ---- */
-html[data-aweauto]:has([class*="Episode_player__"]) [class*="AppLayout_header__"] {
+html[data-aweauto]:has([class*="Episode_player__"]) [class*="AppLayout_header__"],
+html[data-aweauto]:has([class*="Episode_player__"]) [class*="AppLayout_navigation__"] {
   display: none !important;
 }
-/* ヘッダー分の行 (50px) がグリッドに固定で確保されているので自動に戻す */
+/* ヘッダー行やサイドナビ列がグリッドで固定確保されているので、グリッドごと解除する */
 html[data-aweauto]:has([class*="Episode_player__"]) [class*="AppLayout_app__"] {
-  grid-template-rows: none !important;
+  display: block !important;
 }
 [class*="Episode_player__"] [class*="PlayerLayout_aspectRatioWrapper__"] {
   height: 100vh !important;

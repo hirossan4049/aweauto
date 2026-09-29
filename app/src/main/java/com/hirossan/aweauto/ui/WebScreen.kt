@@ -9,6 +9,8 @@ import android.webkit.CookieManager
 import android.webkit.PermissionRequest
 import android.webkit.WebChromeClient
 import android.webkit.WebView
+import android.webkit.WebResourceRequest
+import android.webkit.WebResourceResponse
 import android.webkit.WebViewClient
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateDpAsState
@@ -42,6 +44,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -55,6 +58,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
+import com.hirossan.aweauto.adblock.AdBlocker
 import com.hirossan.aweauto.data.Prefs
 import com.hirossan.aweauto.data.StreamService
 import com.hirossan.aweauto.web.SiteTweaks
@@ -67,6 +71,8 @@ private val RailWidth = 64.dp
 fun WebScreen(route: Route.Web) {
     val optimizeFlags by Prefs.optimizeFlags.collectAsState()
     val optimized = optimizeFlags[route.service.id] ?: true
+    val adblock by Prefs.adblock.collectAsState()
+    var blockedCount by remember(route) { mutableIntStateOf(0) }
     var fullscreen by remember { mutableStateOf<Pair<View, WebChromeClient.CustomViewCallback>?>(null) }
     var webView by remember { mutableStateOf<WebView?>(null) }
     var currentUrl by remember(route) { mutableStateOf(route.url) }
@@ -82,8 +88,8 @@ fun WebScreen(route: Route.Web) {
     val railWidth by animateDpAsState(if (immersive) 0.dp else RailWidth, label = "railWidth")
 
     Box(Modifier.fillMaxSize().background(Color.Black)) {
-        // CSS 設定を切り替えたら WebView ごと作り直す (注入済みスクリプトを外す API が無いため)
-        key(route, optimized) {
+        // 設定を切り替えたら WebView ごと作り直す (注入済みスクリプトを外す API が無いため)
+        key(route, optimized, adblock) {
             AndroidView(
                 modifier = Modifier.fillMaxSize().padding(start = railWidth),
                 factory = { ctx ->
@@ -91,6 +97,8 @@ fun WebScreen(route: Route.Web) {
                         ctx,
                         route,
                         optimized,
+                        adblock,
+                        onBlocked = { blockedCount++ },
                         onFullscreen = { fullscreen = it },
                         onUrl = { currentUrl = it },
                     ).also {
@@ -110,6 +118,7 @@ fun WebScreen(route: Route.Web) {
             SideRail(
                 service = route.service,
                 optimized = optimized,
+                blockedCount = if (adblock) blockedCount else null,
                 translucent = immersive,
                 onBack = { railPeek = false; AweNav.back() },
                 onHome = { AweNav.home() },
@@ -151,11 +160,13 @@ private fun createWebView(
     ctx: android.content.Context,
     route: Route.Web,
     optimized: Boolean,
+    adblock: Boolean,
+    onBlocked: () -> Unit,
     onFullscreen: (Pair<View, WebChromeClient.CustomViewCallback>?) -> Unit,
     onUrl: (String) -> Unit,
 ): WebView {
     val service = route.service
-    val tweaks = if (optimized) SiteTweaks(ctx, service) else null
+    val tweaks = SiteTweaks(ctx, service, optimize = optimized, adblock = adblock)
     val cookies = CookieManager.getInstance()
     if (optimized && service == StreamService.YOUTUBE) {
         // f6=400: ダークテーマ
@@ -174,15 +185,24 @@ private fun createWebView(
             useWideViewPort = true
             userAgentString = UserAgents.forKind(ctx, service.userAgent)
         }
-        tweaks?.install(this)
+        tweaks.install(this)
 
         webViewClient = object : WebViewClient() {
             override fun onPageStarted(view: WebView, url: String?, favicon: Bitmap?) {
-                tweaks?.onPage(view, url)
+                tweaks.onPage(view, url)
             }
 
             override fun onPageFinished(view: WebView, url: String?) {
-                tweaks?.onPage(view, url)
+                tweaks.onPage(view, url)
+            }
+
+            override fun shouldInterceptRequest(view: WebView, request: WebResourceRequest): WebResourceResponse? {
+                if (!adblock) return null
+                val host = request.url.host ?: return null
+                if (!AdBlocker.isBlocked(host)) return null
+                view.post(onBlocked)
+                // 空のレスポンスを返して読み込ませない
+                return WebResourceResponse("text/plain", "utf-8", 204, "Blocked", emptyMap(), null)
             }
 
             override fun doUpdateVisitedHistory(view: WebView, url: String?, isReload: Boolean) {
@@ -232,6 +252,8 @@ private fun youtubeVideoId(url: String?): String? {
 private fun SideRail(
     service: StreamService,
     optimized: Boolean,
+    /** 広告ブロック OFF なら null */
+    blockedCount: Int?,
     translucent: Boolean,
     onBack: () -> Unit,
     onHome: () -> Unit,
@@ -261,6 +283,10 @@ private fun SideRail(
         RailButton(Icons.Filled.Home, "ホーム", onClick = onHome)
         RailButton(Icons.Filled.Refresh, "再読込", onClick = onReload)
         Spacer(Modifier.weight(1f))
+        if (blockedCount != null) {
+            Text("広告", color = AweColors.OnSurfaceDim, fontSize = 10.sp)
+            Text("$blockedCount", color = AweColors.Accent, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
+        }
         if (optimized) {
             Text("最適化", color = AweColors.Accent, fontSize = 10.sp)
         }
