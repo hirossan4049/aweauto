@@ -34,7 +34,7 @@ object Prefs {
     val maxHeight: StateFlow<Int> = _maxHeight.asStateFlow()
     private val _cast = MutableStateFlow(true)
     val cast: StateFlow<Boolean> = _cast.asStateFlow()
-    private val _prefetch = MutableStateFlow(true)
+    private val _prefetch = MutableStateFlow(false)
     val prefetch: StateFlow<Boolean> = _prefetch.asStateFlow()
     private val _history = MutableStateFlow<List<HistoryItem>>(emptyList())
     val history: StateFlow<List<HistoryItem>> = _history.asStateFlow()
@@ -45,7 +45,7 @@ object Prefs {
         _history.value = decodeHistory(sp.getString("history", null))
         _adblock.value = sp.getBoolean("adblock", true)
         _maxHeight.value = sp.getInt("max_height", 480)
-        _prefetch.value = sp.getBoolean("prefetch", true)
+        _prefetch.value = sp.getBoolean("prefetch", false)
         _cast.value = sp.getBoolean("cast", true)
         _filterLists.value = FilterList.entries.filter { sp.getBoolean(filterKey(it), it.defaultOn) }.toSet()
     }

@@ -111,8 +111,8 @@ fun SettingsScreen(onBack: (() -> Unit)?) {
             }
             item {
                 SettingRow(
-                    title = "電波の良いうちに先読みする",
-                    description = "TVer は約 7 分、YouTube は約 2 分先まで読み込みます (標準はどちらも 20〜30 秒)",
+                    title = "電波の良いうちに先読みする (実験的)",
+                    description = "TVer / YouTube のプレーヤーの先読み量を増やします。環境によっては再生が止まることがあります",
                     checked = prefetch,
                     onChange = { Prefs.setPrefetch(it) },
                 )
