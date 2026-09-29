@@ -4,6 +4,8 @@ import android.content.Context
 import android.content.SharedPreferences
 import com.h1rose.aweauto.adblock.AdBlocker
 import com.h1rose.aweauto.adblock.FilterList
+import com.h1rose.aweauto.cast.CastBridge
+import com.h1rose.aweauto.cast.LoungeReceiver
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -30,6 +32,8 @@ object Prefs {
     /** 画質の上限 (縦の画素数)。0 なら自動 */
     private val _maxHeight = MutableStateFlow(480)
     val maxHeight: StateFlow<Int> = _maxHeight.asStateFlow()
+    private val _cast = MutableStateFlow(true)
+    val cast: StateFlow<Boolean> = _cast.asStateFlow()
     private val _prefetch = MutableStateFlow(true)
     val prefetch: StateFlow<Boolean> = _prefetch.asStateFlow()
     private val _history = MutableStateFlow<List<HistoryItem>>(emptyList())
@@ -42,12 +46,19 @@ object Prefs {
         _adblock.value = sp.getBoolean("adblock", true)
         _maxHeight.value = sp.getInt("max_height", 480)
         _prefetch.value = sp.getBoolean("prefetch", true)
+        _cast.value = sp.getBoolean("cast", true)
         _filterLists.value = FilterList.entries.filter { sp.getBoolean(filterKey(it), it.defaultOn) }.toSet()
     }
 
     fun setMaxHeight(height: Int) {
         sp.edit().putInt("max_height", height).apply()
         _maxHeight.value = height
+    }
+
+    fun setCast(enabled: Boolean) {
+        sp.edit().putBoolean("cast", enabled).apply()
+        _cast.value = enabled
+        if (enabled) LoungeReceiver.start(CastBridge) else LoungeReceiver.stop()
     }
 
     fun setPrefetch(enabled: Boolean) {

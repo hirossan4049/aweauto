@@ -53,8 +53,10 @@ class SiteTweaks(
                 })();
                 """.trimIndent()
             ).append('\n')
-            append(context.assetOrEmpty("js/${service.id}.js"))
+            append(context.assetOrEmpty("js/${service.id}.js")).append('\n')
         }
+        // キャスト受信用の再生状態通知 (window.AweCast が無い WebView では何もしない)
+        append(context.assetOrEmpty("js/cast-${service.id}.js"))
     }
 
     private val usesDocumentStart = WebViewFeature.isFeatureSupported(WebViewFeature.DOCUMENT_START_SCRIPT)

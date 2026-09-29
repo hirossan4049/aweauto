@@ -34,6 +34,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.h1rose.aweauto.adblock.AdBlocker
 import com.h1rose.aweauto.adblock.FilterList
+import com.h1rose.aweauto.cast.CastStatus
+import com.h1rose.aweauto.cast.LoungeReceiver
 import com.h1rose.aweauto.data.Prefs
 import com.h1rose.aweauto.data.StreamService
 import java.text.SimpleDateFormat
@@ -50,6 +52,8 @@ fun SettingsScreen(onBack: (() -> Unit)?) {
     val adStatus by AdBlocker.status.collectAsState()
     val maxHeight by Prefs.maxHeight.collectAsState()
     val prefetch by Prefs.prefetch.collectAsState()
+    val cast by Prefs.cast.collectAsState()
+    val castStatus by LoungeReceiver.status.collectAsState()
 
     Column(Modifier.fillMaxSize().background(AweColors.Background)) {
         Row(
@@ -82,6 +86,18 @@ fun SettingsScreen(onBack: (() -> Unit)?) {
                     checked = flags[service.id] ?: true,
                     onChange = { Prefs.setOptimized(service, it) },
                 )
+            }
+            item { SectionLabel("スマホからキャスト") }
+            item {
+                SettingRow(
+                    title = "YouTube アプリからのキャストを受ける",
+                    description = "テレビコードでリンクすると、同じ Wi-Fi でなくてもキャストボタンからこの画面で再生できます",
+                    checked = cast,
+                    onChange = { Prefs.setCast(it) },
+                )
+            }
+            if (cast) {
+                item { PairingCard(castStatus) }
             }
             item { SectionLabel("通信と先読み") }
             item {
@@ -144,6 +160,41 @@ fun SettingsScreen(onBack: (() -> Unit)?) {
                 )
             }
         }
+    }
+}
+
+/** テレビコードと接続状態 */
+@Composable
+private fun PairingCard(status: CastStatus) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(16.dp))
+            .background(AweColors.Surface)
+            .padding(18.dp),
+    ) {
+        Text("テレビコード", color = AweColors.OnSurfaceDim, fontSize = 13.sp)
+        Text(
+            status.pairingCode ?: "取得中…",
+            color = AweColors.OnSurface,
+            fontSize = 28.sp,
+            fontWeight = FontWeight.SemiBold,
+            letterSpacing = 2.sp,
+        )
+        Spacer(Modifier.height(6.dp))
+        Text(
+            "YouTube アプリ → 設定 → テレビで見る → テレビコードでリンク で入力。一度リンクすれば以後はキャストボタンに「aweauto (車)」が出ます",
+            color = AweColors.OnSurfaceDim,
+            fontSize = 13.sp,
+        )
+        Spacer(Modifier.height(10.dp))
+        val line = when {
+            status.remotes.isNotEmpty() -> "接続中: " + status.remotes.joinToString("、")
+            status.online -> "待機中 (オンライン)"
+            status.error != null -> "接続できません: ${status.error}"
+            else -> "接続中…"
+        }
+        Text(line, color = if (status.online) AweColors.Accent else AweColors.OnSurfaceDim, fontSize = 13.sp)
     }
 }
 

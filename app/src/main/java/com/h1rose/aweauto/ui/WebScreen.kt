@@ -58,6 +58,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import com.h1rose.aweauto.adblock.AdBlocker
+import com.h1rose.aweauto.cast.CastBridge
 import com.h1rose.aweauto.data.Prefs
 import com.h1rose.aweauto.data.StreamService
 import com.h1rose.aweauto.web.PlaybackConfig
@@ -111,7 +112,10 @@ fun WebScreen(route: Route.Web) {
                         it.loadUrl(route.url)
                     }
                 },
-                onRelease = { it.destroy() },
+                onRelease = {
+                    CastBridge.detach(it)
+                    it.destroy()
+                },
             )
         }
 
@@ -190,6 +194,7 @@ private fun createWebView(
             userAgentString = UserAgents.forKind(ctx, service.userAgent)
         }
         tweaks.install(this)
+        if (service == StreamService.YOUTUBE) CastBridge.attach(this)
 
         webViewClient = object : WebViewClient() {
             override fun onPageStarted(view: WebView, url: String?, favicon: Bitmap?) {
