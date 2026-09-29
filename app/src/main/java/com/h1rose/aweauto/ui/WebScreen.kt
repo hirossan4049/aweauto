@@ -68,6 +68,8 @@ import com.h1rose.aweauto.adblock.AdBlocker
 import com.h1rose.aweauto.cast.CastBridge
 import com.h1rose.aweauto.data.Prefs
 import com.h1rose.aweauto.data.StreamService
+import com.h1rose.aweauto.R
+import com.h1rose.aweauto.web.HlsPrefetcher
 import com.h1rose.aweauto.web.PlaybackConfig
 import com.h1rose.aweauto.web.SiteTweaks
 import com.h1rose.aweauto.web.UserAgents
@@ -85,6 +87,7 @@ fun WebScreen(route: Route.Web) {
     val adblock by Prefs.adblock.collectAsState()
     val maxHeight by Prefs.maxHeight.collectAsState()
     val prefetch by Prefs.prefetch.collectAsState()
+    val tverOffline by Prefs.tverOffline.collectAsState()
     val playback = PlaybackConfig(maxHeight = maxHeight, readaheadSec = if (prefetch) READAHEAD_SEC else 0)
     var fullscreen by remember { mutableStateOf<Pair<View, WebChromeClient.CustomViewCallback>?>(null) }
     var webView by remember { mutableStateOf<WebView?>(null) }
@@ -108,7 +111,7 @@ fun WebScreen(route: Route.Web) {
 
     Box(Modifier.fillMaxSize().background(Color.Black)) {
         // 設定を切り替えたら WebView ごと作り直す (注入済みスクリプトを外す API が無いため)
-        key(route, optimized, adblock, playback) {
+        key(route, optimized, adblock, playback, tverOffline) {
             AndroidView(
                 modifier = Modifier.fillMaxSize().padding(start = railWidth),
                 factory = { ctx ->
@@ -118,6 +121,7 @@ fun WebScreen(route: Route.Web) {
                         optimized,
                         adblock,
                         playback,
+                        tverOffline,
                         onFullscreen = { fullscreen = it },
                         onUrl = { currentUrl = it },
                         onVideoPlaying = { videoStarted = true },
@@ -127,6 +131,7 @@ fun WebScreen(route: Route.Web) {
                     }
                 },
                 onRelease = {
+                    (it.getTag(R.id.hls_prefetcher) as? HlsPrefetcher)?.release()
                     CastBridge.detach(it)
                     it.destroy()
                 },
@@ -192,12 +197,14 @@ private fun createWebView(
     optimized: Boolean,
     adblock: Boolean,
     playback: PlaybackConfig,
+    tverOffline: Boolean,
     onFullscreen: (Pair<View, WebChromeClient.CustomViewCallback>?) -> Unit,
     onUrl: (String) -> Unit,
     onVideoPlaying: () -> Unit,
 ): WebView {
     val service = route.service
     val tweaks = SiteTweaks(ctx, service, optimize = optimized, adblock = adblock, playback = playback)
+    val hls = if (service == StreamService.TVER && tverOffline) HlsPrefetcher(ctx, playback.maxHeight) else null
     val cookies = CookieManager.getInstance()
     if (optimized && service == StreamService.YOUTUBE) {
         // f6=400: ダークテーマ
@@ -217,6 +224,7 @@ private fun createWebView(
             userAgentString = UserAgents.forKind(ctx, service.userAgent)
         }
         tweaks.install(this)
+        setTag(R.id.hls_prefetcher, hls)
         if (service == StreamService.YOUTUBE) CastBridge.attach(this)
         addJavascriptInterface(
             object {
@@ -238,11 +246,12 @@ private fun createWebView(
             }
 
             override fun shouldInterceptRequest(view: WebView, request: WebResourceRequest): WebResourceResponse? {
-                if (!adblock) return null
                 val host = request.url.host ?: return null
-                if (!AdBlocker.isBlocked(host)) return null
-                // 空のレスポンスを返して読み込ませない
-                return WebResourceResponse("text/plain", "utf-8", 204, "Blocked", emptyMap(), null)
+                if (adblock && AdBlocker.isBlocked(host)) {
+                    // 空のレスポンスを返して読み込ませない
+                    return WebResourceResponse("text/plain", "utf-8", 204, "Blocked", emptyMap(), null)
+                }
+                return hls?.intercept(request)
             }
 
             override fun doUpdateVisitedHistory(view: WebView, url: String?, isReload: Boolean) {

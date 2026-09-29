@@ -34,6 +34,8 @@ object Prefs {
     val maxHeight: StateFlow<Int> = _maxHeight.asStateFlow()
     private val _cast = MutableStateFlow(true)
     val cast: StateFlow<Boolean> = _cast.asStateFlow()
+    private val _tverOffline = MutableStateFlow(true)
+    val tverOffline: StateFlow<Boolean> = _tverOffline.asStateFlow()
     private val _prefetch = MutableStateFlow(false)
     val prefetch: StateFlow<Boolean> = _prefetch.asStateFlow()
     private val _history = MutableStateFlow<List<HistoryItem>>(emptyList())
@@ -46,6 +48,7 @@ object Prefs {
         _adblock.value = sp.getBoolean("adblock", true)
         _maxHeight.value = sp.getInt("max_height", 480)
         _prefetch.value = sp.getBoolean("prefetch", false)
+        _tverOffline.value = sp.getBoolean("tver_offline", true)
         _cast.value = sp.getBoolean("cast", true)
         _filterLists.value = FilterList.entries.filter { sp.getBoolean(filterKey(it), it.defaultOn) }.toSet()
     }
@@ -59,6 +62,11 @@ object Prefs {
         sp.edit().putBoolean("cast", enabled).apply()
         _cast.value = enabled
         if (enabled) LoungeReceiver.start(CastBridge) else LoungeReceiver.stop()
+    }
+
+    fun setTverOffline(enabled: Boolean) {
+        sp.edit().putBoolean("tver_offline", enabled).apply()
+        _tverOffline.value = enabled
     }
 
     fun setPrefetch(enabled: Boolean) {

@@ -40,7 +40,9 @@ English | [日本語](README.ja.md)
 - 🛡️ **Ad blocking.**
   - Domain rules from AdGuard DNS, EasyList and AdGuard Japanese filters, refreshed daily.
   - YouTube video ads are stripped from the player response.
-- 📶 **Low-bandwidth mode.** A quality cap (auto/720p/480p/360p). *Experimental:* a larger read-ahead buffer.
+- 📶 **Made for dead zones.**
+  - **TVer episodes are downloaded to disk in the background as you watch.** Every HLS segment listed in the playlist is fetched and then served to the player from disk. Once an episode is cached, tunnels and dead zones don't interrupt it.
+  - A quality cap (auto/720p/480p/360p) applies to both sites. *Experimental:* a larger read-ahead for YouTube.
 
 ## Screenshots
 
@@ -72,6 +74,7 @@ flowchart LR
 - **Drawing on the car screen.** The Car App Library lets a *navigation* app draw its own map onto a `Surface`. aweauto turns that surface into a `VirtualDisplay` and shows a Compose `Presentation` on it, so any UI can run on the car screen.
 - **Touch input.** The host only reports taps and scroll deltas. `TouchInjector` rebuilds them into `MotionEvent`s and feeds them to the UI.
 - **Site tweaks.** Stylesheets and scripts live in [`app/src/main/assets`](app/src/main/assets). They are injected at document start with `WebViewCompat.addDocumentStartJavaScript`.
+- **Background download (TVer).** `HlsPrefetcher` intercepts the HLS playlists and trims the master playlist to one rendition so the player never switches quality. It then downloads every segment and AES key to a 2 GB LRU disk cache and answers the player's segment requests from disk. The player's own MSE buffer stays small, so the browser quota is never hit.
 - **Casting.** Casting is a Kotlin port of the YouTube Lounge (MDX) screen protocol. It keeps a persistent screen ID and a bind long-poll, and reports playback state back to the phone.
 
 ## Getting started
@@ -122,9 +125,7 @@ Then enable unknown sources in Android Auto:
 
 - **Android Auto's own UI stays.** The system bar and the small back button that Android Auto overlays can't be hidden by an app.
 - **Site changes break things.** The site tweaks depend on YouTube's and TVer's DOM and player internals, and can stop working when those sites change.
-- **The read-ahead buffer is experimental.**
-  - YouTube tops out at about 2 minutes.
-  - TVer can exceed the browser's MSE quota and stop loading.
+- **YouTube can't be cached ahead.** Its web player streams over SABR, which sends POST requests whose body decides what the server returns, so WebView can't predict or serve those requests. Its read-ahead tops out at about 2 minutes.
 - **TVer is Japan only.** TVer needs a Japanese IP address.
 
 ## Disclaimer

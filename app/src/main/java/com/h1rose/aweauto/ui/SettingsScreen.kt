@@ -29,6 +29,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -38,6 +39,7 @@ import com.h1rose.aweauto.cast.CastStatus
 import com.h1rose.aweauto.cast.LoungeReceiver
 import com.h1rose.aweauto.data.Prefs
 import com.h1rose.aweauto.data.StreamService
+import com.h1rose.aweauto.web.HlsCacheStore
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -52,6 +54,10 @@ fun SettingsScreen(onBack: (() -> Unit)?) {
     val adStatus by AdBlocker.status.collectAsState()
     val maxHeight by Prefs.maxHeight.collectAsState()
     val prefetch by Prefs.prefetch.collectAsState()
+    val tverOffline by Prefs.tverOffline.collectAsState()
+    val hlsUsage by HlsCacheStore.usage.collectAsState()
+    val hlsProgress by HlsCacheStore.progressFlow.collectAsState()
+    val context = LocalContext.current
     val cast by Prefs.cast.collectAsState()
     val castStatus by LoungeReceiver.status.collectAsState()
 
@@ -111,8 +117,27 @@ fun SettingsScreen(onBack: (() -> Unit)?) {
             }
             item {
                 SettingRow(
-                    title = "電波の良いうちに先読みする (実験的)",
-                    description = "TVer / YouTube のプレーヤーの先読み量を増やします。環境によっては再生が止まることがあります",
+                    title = "TVer を裏で丸ごと先読みする",
+                    description = "再生を始めた番組を最後まで端末に保存しながら再生します。保存済みの部分はトンネルや圏外でも止まりません",
+                    checked = tverOffline,
+                    onChange = { Prefs.setTverOffline(it) },
+                )
+            }
+            if (tverOffline) {
+                item {
+                    val progressText = hlsProgress["video"]?.let { " ・ 再生中の番組 $it%" }.orEmpty()
+                    ActionRow(
+                        title = "先読みした動画",
+                        description = "%.1f GB / 2 GB".format(hlsUsage / 1e9) + progressText,
+                        action = "消去",
+                        onClick = { HlsCacheStore.get(context).clear() },
+                    )
+                }
+            }
+            item {
+                SettingRow(
+                    title = "YouTube の先読みを増やす (実験的)",
+                    description = "プレーヤーの先読みを約 30 秒から約 2 分に増やします。YouTube は丸ごとの先読みができません",
                     checked = prefetch,
                     onChange = { Prefs.setPrefetch(it) },
                 )

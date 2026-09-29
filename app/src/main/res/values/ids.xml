@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- WebView に紐づけた HlsPrefetcher を破棄時に取り出すためのタグ -->
+    <item name="hls_prefetcher" type="id" />
+</resources>
