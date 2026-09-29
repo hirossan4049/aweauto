@@ -10,11 +10,16 @@ import android.webkit.PermissionRequest
 import android.webkit.WebChromeClient
 import android.webkit.WebView
 import android.webkit.WebViewClient
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
@@ -33,6 +38,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
@@ -53,6 +59,9 @@ import com.hirossan.aweauto.data.Prefs
 import com.hirossan.aweauto.data.StreamService
 import com.hirossan.aweauto.web.SiteTweaks
 import com.hirossan.aweauto.web.UserAgents
+import kotlinx.coroutines.delay
+
+private val RailWidth = 64.dp
 
 @Composable
 fun WebScreen(route: Route.Web) {
@@ -60,29 +69,55 @@ fun WebScreen(route: Route.Web) {
     val optimized = optimizeFlags[route.service.id] ?: true
     var fullscreen by remember { mutableStateOf<Pair<View, WebChromeClient.CustomViewCallback>?>(null) }
     var webView by remember { mutableStateOf<WebView?>(null) }
+    var currentUrl by remember(route) { mutableStateOf(route.url) }
+    // 再生ページではレールを隠して動画を横幅いっぱいに出す。左端のつまみで一時的に呼び出せる
+    val immersive = isPlaybackUrl(currentUrl)
+    var railPeek by remember { mutableStateOf(false) }
+    LaunchedEffect(railPeek) {
+        if (railPeek) {
+            delay(4_000)
+            railPeek = false
+        }
+    }
+    val railWidth by animateDpAsState(if (immersive) 0.dp else RailWidth, label = "railWidth")
 
     Box(Modifier.fillMaxSize().background(Color.Black)) {
-        Row(Modifier.fillMaxSize()) {
+        // CSS 設定を切り替えたら WebView ごと作り直す (注入済みスクリプトを外す API が無いため)
+        key(route, optimized) {
+            AndroidView(
+                modifier = Modifier.fillMaxSize().padding(start = railWidth),
+                factory = { ctx ->
+                    createWebView(
+                        ctx,
+                        route,
+                        optimized,
+                        onFullscreen = { fullscreen = it },
+                        onUrl = { currentUrl = it },
+                    ).also {
+                        webView = it
+                        it.loadUrl(route.url)
+                    }
+                },
+                onRelease = { it.destroy() },
+            )
+        }
+
+        AnimatedVisibility(
+            visible = !immersive || railPeek,
+            enter = slideInHorizontally { -it } + fadeIn(),
+            exit = slideOutHorizontally { -it } + fadeOut(),
+        ) {
             SideRail(
                 service = route.service,
                 optimized = optimized,
-                onBack = { AweNav.back() },
+                translucent = immersive,
+                onBack = { railPeek = false; AweNav.back() },
                 onHome = { AweNav.home() },
                 onReload = { webView?.reload() },
             )
-            // CSS 設定を切り替えたら WebView ごと作り直す (注入済みスクリプトを外す API が無いため)
-            key(route, optimized) {
-                AndroidView(
-                    modifier = Modifier.fillMaxSize(),
-                    factory = { ctx ->
-                        createWebView(ctx, route, optimized, onFullscreen = { fullscreen = it }).also {
-                            webView = it
-                            it.loadUrl(route.url)
-                        }
-                    },
-                    onRelease = { it.destroy() },
-                )
-            }
+        }
+        if (immersive && !railPeek) {
+            RailHandle(Modifier.align(Alignment.CenterStart)) { railPeek = true }
         }
 
         fullscreen?.let { (view, callback) ->
@@ -117,6 +152,7 @@ private fun createWebView(
     route: Route.Web,
     optimized: Boolean,
     onFullscreen: (Pair<View, WebChromeClient.CustomViewCallback>?) -> Unit,
+    onUrl: (String) -> Unit,
 ): WebView {
     val service = route.service
     val tweaks = if (optimized) SiteTweaks(ctx, service) else null
@@ -150,6 +186,7 @@ private fun createWebView(
             }
 
             override fun doUpdateVisitedHistory(view: WebView, url: String?, isReload: Boolean) {
+                url?.let(onUrl)
                 youtubeVideoId(url)?.let { Prefs.recordWatch(it, null) }
             }
         }
@@ -176,6 +213,15 @@ private fun createWebView(
     }
 }
 
+/** 動画を再生するページか (YouTube の視聴ページ / TVer の番組ページ) */
+private fun isPlaybackUrl(url: String): Boolean {
+    val uri = Uri.parse(url)
+    val host = uri.host ?: return false
+    val path = uri.path.orEmpty()
+    return (host.endsWith("youtube.com") && path == "/watch") ||
+        (host.endsWith("tver.jp") && path.startsWith("/episodes/"))
+}
+
 private fun youtubeVideoId(url: String?): String? {
     val uri = url?.let(Uri::parse) ?: return null
     if (uri.host?.endsWith("youtube.com") != true || uri.path != "/watch") return null
@@ -186,6 +232,7 @@ private fun youtubeVideoId(url: String?): String? {
 private fun SideRail(
     service: StreamService,
     optimized: Boolean,
+    translucent: Boolean,
     onBack: () -> Unit,
     onHome: () -> Unit,
     onReload: () -> Unit,
@@ -193,8 +240,8 @@ private fun SideRail(
     Column(
         modifier = Modifier
             .fillMaxHeight()
-            .width(64.dp)
-            .background(AweColors.Surface)
+            .width(RailWidth)
+            .background(if (translucent) AweColors.Surface.copy(alpha = 0.85f) else AweColors.Surface)
             .padding(vertical = 12.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(10.dp),
@@ -217,6 +264,25 @@ private fun SideRail(
         if (optimized) {
             Text("最適化", color = AweColors.Accent, fontSize = 10.sp)
         }
+    }
+}
+
+/** 没入モード中に左端に出す小さなつまみ。押すとレールを数秒だけ出す */
+@Composable
+private fun RailHandle(modifier: Modifier = Modifier, onClick: () -> Unit) {
+    Box(
+        modifier = modifier
+            .pressScale(onClick)
+            .size(width = 36.dp, height = 96.dp),
+        contentAlignment = Alignment.CenterStart,
+    ) {
+        Box(
+            Modifier
+                .padding(start = 6.dp)
+                .size(width = 6.dp, height = 56.dp)
+                .clip(CircleShape)
+                .background(Color.White.copy(alpha = 0.35f))
+        )
     }
 }
 
