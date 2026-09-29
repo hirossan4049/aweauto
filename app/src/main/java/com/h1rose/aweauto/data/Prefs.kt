@@ -36,6 +36,8 @@ object Prefs {
     /** 車の画面を「左: 地図 / 右: いつもの画面」に分ける */
     private val _splitMap = MutableStateFlow(false)
     val splitMap: StateFlow<Boolean> = _splitMap.asStateFlow()
+    private val _mapApp = MutableStateFlow("google")
+    val mapApp: StateFlow<String> = _mapApp.asStateFlow()
     private val _cast = MutableStateFlow(true)
     val cast: StateFlow<Boolean> = _cast.asStateFlow()
     private val _tverOffline = MutableStateFlow(true)
@@ -55,6 +57,7 @@ object Prefs {
         _tverOffline.value = sp.getBoolean("tver_offline", true)
         _cast.value = sp.getBoolean("cast", true)
         _splitMap.value = sp.getBoolean("split_map", false)
+        _mapApp.value = sp.getString("map_app", "google") ?: "google"
         _filterLists.value = FilterList.entries.filter { sp.getBoolean(filterKey(it), it.defaultOn) }.toSet()
     }
 
@@ -69,6 +72,11 @@ object Prefs {
     }
 
     fun toggleSplitMap() = setSplitMap(!_splitMap.value)
+
+    fun setMapApp(id: String) {
+        sp.edit().putString("map_app", id).apply()
+        _mapApp.value = id
+    }
 
     fun setCast(context: Context, enabled: Boolean) {
         sp.edit().putBoolean("cast", enabled).apply()

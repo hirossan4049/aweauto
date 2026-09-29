@@ -52,6 +52,8 @@ import com.h1rose.aweauto.BuildConfig
 import com.h1rose.aweauto.adblock.AdBlocker
 import com.h1rose.aweauto.map.DemoMapPane
 import com.h1rose.aweauto.map.MapPanes
+import com.h1rose.aweauto.map.NativeAppMapPane
+import com.h1rose.aweauto.map.NativeMapApp
 import com.h1rose.aweauto.adblock.FilterList
 import com.h1rose.aweauto.cast.CastStatus
 import com.h1rose.aweauto.cast.LoungeReceiver
@@ -76,6 +78,7 @@ fun SettingsScreen(onBack: (() -> Unit)?) {
     val maxHeight by Prefs.maxHeight.collectAsState()
     val prefetch by Prefs.prefetch.collectAsState()
     val tverOffline by Prefs.tverOffline.collectAsState()
+    val mapApp by Prefs.mapApp.collectAsState()
     val hlsUsage by HlsCacheStore.usage.collectAsState()
     val hlsProgress by HlsCacheStore.progressFlow.collectAsState()
     val context = LocalContext.current
@@ -165,6 +168,20 @@ fun SettingsScreen(onBack: (() -> Unit)?) {
             }
             item { SectionLabel("拡張 (Shizuku)", Icons.Outlined.Extension) }
             item {
+                ChoiceRow(
+                    title = "地図枠に出すアプリ",
+                    description = "分割表示の左側に、WebView ではなく端末の地図アプリ本体を起動します。Shizuku の接続が必要です",
+                    options = NativeMapApp.entries.map { it.id to it.label },
+                    selected = mapApp,
+                    onSelect = {
+                        Prefs.setMapApp(it)
+                        context.getSharedPreferences("aweauto", android.content.Context.MODE_PRIVATE)
+                            .edit().putBoolean("demo_map_pane", false).apply()
+                        MapPanes.register(NativeAppMapPane(context, NativeMapApp.fromId(it)))
+                    },
+                )
+            }
+            item {
                 val status by ShizukuState.status.collectAsState()
                 ActionRow(
                     title = "Shizuku",
@@ -192,7 +209,7 @@ fun SettingsScreen(onBack: (() -> Unit)?) {
                         onChange = {
                             context.getSharedPreferences("aweauto", android.content.Context.MODE_PRIVATE)
                                 .edit().putBoolean("demo_map_pane", it).apply()
-                            MapPanes.register(if (it) DemoMapPane() else null)
+                            MapPanes.register(if (it) DemoMapPane() else NativeAppMapPane(context, NativeMapApp.fromId(mapApp)))
                         },
                     )
                 }

@@ -9,6 +9,8 @@ import com.h1rose.aweauto.cast.LoungeReceiver
 import com.h1rose.aweauto.data.Prefs
 import com.h1rose.aweauto.map.DemoMapPane
 import com.h1rose.aweauto.map.MapPanes
+import com.h1rose.aweauto.map.NativeAppMapPane
+import com.h1rose.aweauto.map.NativeMapApp
 import com.h1rose.aweauto.shizuku.ShizukuState
 
 class AweApplication : Application() {
@@ -28,6 +30,8 @@ class AweApplication : Application() {
         // debug ビルドでは起動時に DEMO_MAP_PANE が有効ならテスト表示を登録する
         if (BuildConfig.DEBUG && getSharedPreferences("aweauto", MODE_PRIVATE).getBoolean("demo_map_pane", false)) {
             MapPanes.register(DemoMapPane())
+        } else {
+            MapPanes.register(NativeAppMapPane(this, NativeMapApp.fromId(Prefs.mapApp.value)))
         }
         // chrome://inspect から WebView の DOM を覗けるようにしておく (CSS 調整用)
         if (BuildConfig.DEBUG) WebView.setWebContentsDebuggingEnabled(true)
