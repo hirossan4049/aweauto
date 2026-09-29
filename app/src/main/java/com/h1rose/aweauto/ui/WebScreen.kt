@@ -5,6 +5,7 @@ import android.graphics.Bitmap
 import android.net.Uri
 import android.view.View
 import android.view.ViewGroup
+import android.content.MutableContextWrapper
 import android.webkit.CookieManager
 import android.webkit.JavascriptInterface
 import android.webkit.PermissionRequest
@@ -80,6 +81,34 @@ private val RailWidth = 64.dp
 /** 先読み ON のときに溜める秒数 (実際は各サイトのプレーヤーと MSE の容量上限で頭打ちになる) */
 private const val READAHEAD_SEC = 600
 
+/**
+ * 表示中のページの WebView と状態。Android Auto で別の画面 (地図・電話など) に切り替えると
+ * 車の画面 (Presentation) は作り直されるが、WebView はここに残しておき、戻ったらつなぎ直す。
+ * これで再生が止まったり最初からになったりしない。
+ */
+private class WebSession(val key: List<Any>, val view: WebView, initialUrl: String) {
+    var currentUrl by mutableStateOf(initialUrl)
+    var videoStarted by mutableStateOf(false)
+    var fullscreen by mutableStateOf<Pair<View, WebChromeClient.CustomViewCallback>?>(null)
+
+    fun destroy() {
+        (view.getTag(R.id.hls_prefetcher) as? HlsPrefetcher)?.release()
+        CastBridge.detach(view)
+        (view.parent as? ViewGroup)?.removeView(view)
+        view.destroy()
+    }
+}
+
+private val sessions = mutableMapOf<Route.Web, WebSession>()
+
+/** 戻る・ホームで履歴から外れた画面の WebView を捨てる */
+private fun pruneSessions() {
+    val alive = AweNav.backStack.value.toSet()
+    sessions.entries.removeAll { (route, session) ->
+        (route !in alive).also { if (it) session.destroy() }
+    }
+}
+
 @Composable
 fun WebScreen(route: Route.Web) {
     val optimizeFlags by Prefs.optimizeFlags.collectAsState()
@@ -89,17 +118,46 @@ fun WebScreen(route: Route.Web) {
     val prefetch by Prefs.prefetch.collectAsState()
     val tverOffline by Prefs.tverOffline.collectAsState()
     val playback = PlaybackConfig(maxHeight = maxHeight, readaheadSec = if (prefetch) READAHEAD_SEC else 0)
-    var fullscreen by remember { mutableStateOf<Pair<View, WebChromeClient.CustomViewCallback>?>(null) }
-    var webView by remember { mutableStateOf<WebView?>(null) }
-    var currentUrl by remember(route) { mutableStateOf(route.url) }
+    // 設定を切り替えたら WebView ごと作り直す (注入済みスクリプトを外す API が無いため)
+    val key = listOf(optimized, adblock, playback, tverOffline)
+    val context = LocalContext.current
+    val session = remember(route, key) {
+        sessions[route]?.takeIf { it.key == key } ?: run {
+            sessions.remove(route)?.destroy()
+            lateinit var created: WebSession
+            val view = createWebView(
+                // Presentation ごとに Context が変わるので、差し替えられるようにしておく
+                MutableContextWrapper(context),
+                route,
+                optimized,
+                adblock,
+                playback,
+                tverOffline,
+                onFullscreen = { created.fullscreen = it },
+                onUrl = { created.currentUrl = it },
+                onVideoPlaying = { created.videoStarted = true },
+            )
+            created = WebSession(key, view, route.url)
+            view.loadUrl(route.url)
+            sessions[route] = created
+            created
+        }
+    }
+    val webView = session.view
+    val currentUrl = session.currentUrl
+    val fullscreen = session.fullscreen
+    DisposableEffect(Unit) {
+        onDispose { pruneSessions() }
+    }
     // 再生ページではレールを隠して動画を横幅いっぱいに出す。左端のつまみで一時的に呼び出せる
     val immersive = isPlaybackUrl(currentUrl)
     var railPeek by remember { mutableStateOf(false) }
     // 再生が始まるまでは自前の読み込み画面を重ねる (WebView の灰色のプレースホルダーを見せない)
-    var videoStarted by remember(currentUrl) { mutableStateOf(false) }
+    val videoStarted = session.videoStarted
     LaunchedEffect(currentUrl) {
+        if (session.videoStarted) return@LaunchedEffect
         delay(15_000)
-        videoStarted = true
+        session.videoStarted = true
     }
     LaunchedEffect(railPeek) {
         if (railPeek) {
@@ -110,31 +168,16 @@ fun WebScreen(route: Route.Web) {
     val railWidth by animateDpAsState(if (immersive) 0.dp else RailWidth, label = "railWidth")
 
     Box(Modifier.fillMaxSize().background(Color.Black)) {
-        // 設定を切り替えたら WebView ごと作り直す (注入済みスクリプトを外す API が無いため)
-        key(route, optimized, adblock, playback, tverOffline) {
+        key(session) {
             AndroidView(
                 modifier = Modifier.fillMaxSize().padding(start = railWidth),
                 factory = { ctx ->
-                    createWebView(
-                        ctx,
-                        route,
-                        optimized,
-                        adblock,
-                        playback,
-                        tverOffline,
-                        onFullscreen = { fullscreen = it },
-                        onUrl = { currentUrl = it },
-                        onVideoPlaying = { videoStarted = true },
-                    ).also {
-                        webView = it
-                        it.loadUrl(route.url)
-                    }
+                    (webView.context as MutableContextWrapper).baseContext = ctx
+                    (webView.parent as? ViewGroup)?.removeView(webView)
+                    webView
                 },
-                onRelease = {
-                    (it.getTag(R.id.hls_prefetcher) as? HlsPrefetcher)?.release()
-                    CastBridge.detach(it)
-                    it.destroy()
-                },
+                // 画面が作り直されるときは外すだけ。捨てるのは履歴から外れたとき (pruneSessions)
+                onRelease = { (it.parent as? ViewGroup)?.removeView(it) },
             )
         }
 
@@ -143,7 +186,7 @@ fun WebScreen(route: Route.Web) {
             enter = fadeIn(),
             exit = fadeOut(),
         ) {
-            LoadingCover(currentUrl, onDismiss = { videoStarted = true })
+            LoadingCover(currentUrl, onDismiss = { session.videoStarted = true })
         }
 
         AnimatedVisibility(
@@ -157,7 +200,7 @@ fun WebScreen(route: Route.Web) {
                 translucent = immersive,
                 onBack = { railPeek = false; AweNav.back() },
                 onHome = { AweNav.home() },
-                onReload = { webView?.reload() },
+                onReload = { webView.reload() },
             )
         }
         if (immersive && !railPeek) {
@@ -166,7 +209,11 @@ fun WebScreen(route: Route.Web) {
 
         fullscreen?.let { (view, callback) ->
             Box(Modifier.fillMaxSize().background(Color.Black)) {
-                AndroidView(factory = { view }, modifier = Modifier.fillMaxSize())
+                AndroidView(
+                    factory = { (view.parent as? ViewGroup)?.removeView(view); view },
+                    onRelease = { (it.parent as? ViewGroup)?.removeView(it) },
+                    modifier = Modifier.fillMaxSize(),
+                )
                 RailButton(
                     icon = Icons.Filled.Close,
                     label = "全画面を終了",
@@ -182,7 +229,7 @@ fun WebScreen(route: Route.Web) {
             val current = fullscreen
             when {
                 current != null -> { current.second.onCustomViewHidden(); true }
-                webView?.canGoBack() == true -> { webView?.goBack(); true }
+                webView.canGoBack() -> { webView.goBack(); true }
                 else -> false
             }
         }
@@ -192,7 +239,7 @@ fun WebScreen(route: Route.Web) {
 
 @SuppressLint("SetJavaScriptEnabled")
 private fun createWebView(
-    ctx: android.content.Context,
+    ctx: MutableContextWrapper,
     route: Route.Web,
     optimized: Boolean,
     adblock: Boolean,
