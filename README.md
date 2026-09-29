@@ -1,35 +1,140 @@
+<div align="center">
+
 # aweauto
 
-Android Auto で YouTube / TVer を Google TV 風の UI で見るための個人用アプリ。
+**A Google TV–style player for YouTube and TVer on Android Auto.**
 
-## 仕組み
+No root. You don't modify Android Auto. It runs on any phone that can sideload an app.
 
-- Car App Library の **NAVIGATION** カテゴリで地図用 Surface を貰い、`VirtualDisplay` + `Presentation` で Compose の画面を丸ごと描画する (`car/`)
-- 車側のタッチは「タップ座標」と「スクロール量」でしか来ないので、`TouchInjector` で MotionEvent に組み立て直している
-- YouTube / TVer は WebView で開き、設定で ON のときだけ `assets/css/*.css` と `assets/js/*.js` を注入する (`web/SiteTweaks.kt`)
+English | [日本語](README.ja.md)
 
-## ビルドとインストール
+![Android](https://img.shields.io/badge/Android-9%2B-3DDC84?logo=android&logoColor=white)
+![Kotlin](https://img.shields.io/badge/Kotlin-2.1-7F52FF?logo=kotlin&logoColor=white)
+![Jetpack Compose](https://img.shields.io/badge/Jetpack%20Compose-Material%203-4285F4?logo=jetpackcompose&logoColor=white)
+![Android Auto](https://img.shields.io/badge/Android%20Auto-Car%20App%20Library%201.4-1A73E8)
 
-Play ストア外のナビアプリは Android Auto に隠されるので、インストール元を Play ストアにして入れる。
+<img src="docs/screenshots/home.png" width="720" alt="Home screen">
+
+</div>
+
+> [!WARNING]
+> aweauto is meant for passengers, and for the driver **only while parked**. Watching video while driving is dangerous and illegal in most countries.
+
+## Features
+
+- 📺 **Google TV–style home screen.** A hero banner, shelves, tabs, a clock and a history library, all designed for touch on a car display.
+- ▶️ **YouTube and TVer, tuned for the car.** Per-site CSS/JS gives you:
+  - a dark theme
+  - a 3-column grid for search results
+  - a full-bleed player
+  - automatic unmute
+  - automatic answers to TVer's pre-roll survey
+  - no Shorts, app banners or bottom tab bar
+
+  Each site can be switched off in Settings.
+- 🕶️ **Immersive playback.** The side rail hides while a video plays. A small handle on the left edge brings it back.
+- ⏳ **Loading cover.** Until playback starts you see the thumbnail and a spinner instead of WebView's grey placeholder.
+- 📲 **Send from your phone.**
+  - *Share → "車の画面で開く"* from the YouTube or TVer app.
+  - **Cast from the official YouTube app** via *Link with TV code* (the Lounge protocol). This works over mobile data too, with no shared Wi-Fi needed.
+- 🛡️ **Ad blocking.**
+  - Domain rules from AdGuard DNS, EasyList and AdGuard Japanese filters, refreshed daily.
+  - YouTube video ads are stripped from the player response.
+- 📶 **Low-bandwidth mode.** A quality cap (auto/720p/480p/360p). *Experimental:* a larger read-ahead buffer.
+
+## Screenshots
+
+| | |
+|:-:|:-:|
+| <img src="docs/screenshots/home.png" alt="Home"> Home | <img src="docs/screenshots/library.png" alt="Library"> Library (watch history) |
+| <img src="docs/screenshots/youtube-search.png" alt="YouTube search"> YouTube search, 3-column grid | <img src="docs/screenshots/youtube-player.png" alt="YouTube player"> YouTube, immersive player |
+| <img src="docs/screenshots/loading.png" alt="Loading cover"> Loading cover | <img src="docs/screenshots/settings.png" alt="Settings"> Settings |
+| <img src="docs/screenshots/tver-home.png" alt="TVer home"> TVer (dark theme) | <img src="docs/screenshots/tver-player.png" alt="TVer player"> TVer, full-bleed player |
+
+<sub>Screenshots were taken on the Android Auto Desktop Head Unit at 1280×720. The videos shown are from [ダイアン公式チャンネル](https://www.youtube.com/@daian_youandtube) and TVer.</sub>
+
+## How it works
+
+```mermaid
+flowchart LR
+    subgraph Phone
+        CAS[CarAppService<br/>NAVIGATION category] -- Surface --> VD[VirtualDisplay]
+        VD --> PR[Presentation<br/>Jetpack Compose UI]
+        PR --> WV[WebView<br/>YouTube / TVer]
+        WV -. injects .-> JS[CSS / JS tweaks<br/>ad-block · quality · cast bridge]
+        LR[Lounge receiver] <-- long-poll --> YT[(YouTube Lounge API)]
+        LR --> WV
+    end
+    CAS <== Android Auto ==> HU[Car display]
+    APP[YouTube app] -- Link with TV code --> YT
+```
+
+- **Drawing on the car screen.** The Car App Library lets a *navigation* app draw its own map onto a `Surface`. aweauto turns that surface into a `VirtualDisplay` and shows a Compose `Presentation` on it, so any UI can run on the car screen.
+- **Touch input.** The host only reports taps and scroll deltas. `TouchInjector` rebuilds them into `MotionEvent`s and feeds them to the UI.
+- **Site tweaks.** Stylesheets and scripts live in [`app/src/main/assets`](app/src/main/assets). They are injected at document start with `WebViewCompat.addDocumentStartJavaScript`.
+- **Casting.** Casting is a Kotlin port of the YouTube Lounge (MDX) screen protocol. It keeps a persistent screen ID and a bind long-poll, and reports playback state back to the phone.
+
+## Getting started
+
+### Requirements
+
+- An Android 9+ phone with Android Auto installed
+- JDK 17 and the Android SDK (platform 35)
+
+### Build and install
+
+Android Auto hides navigation apps that didn't come from the Play Store. To get around that, install with the Play Store as the installer:
 
 ```bash
 ./gradlew :app:assembleDebug
 adb install -r -i com.android.vending app/build/outputs/apk/debug/app-debug.apk
 ```
 
-Android Auto の設定 → バージョンを 10 回タップして開発者モード → デベロッパー設定で「提供元不明のアプリ」を ON。
+Then enable unknown sources in Android Auto:
 
-## 車の画面に送る
+1. In Android Auto settings, tap **Version** 10 times to enable developer mode.
+2. Open ⋮ → **Developer settings** and turn on **Unknown sources**.
+3. Reconnect to the car. **aweauto** now appears in the app launcher.
 
-スマホの YouTube / TVer アプリで「共有 → 車の画面で開く」。adb からは:
+### Casting from the YouTube app
 
-```bash
-adb shell am start -a android.intent.action.SEND -t text/plain \
-  --es android.intent.extra.TEXT "https://youtu.be/VIDEO_ID" \
-  -n com.h1rose.aweauto/.ShareActivity
-```
+1. On the car screen, open **Settings → スマホからキャスト**. A 12-digit TV code is shown.
+2. In the YouTube app, go to **Settings → Watch on TV → Link with TV code** and enter the code.
+3. From now on, **aweauto (車)** appears under the cast button.
 
-## CSS の調整
+## Development
 
-debug ビルドは WebView のリモートデバッグが有効なので、`chrome://inspect` から実際の DOM を見ながら `assets/css/` を編集する。
-Mac 上での動作確認は Android SDK の Desktop Head Unit (`extras;google;auto`) を使う。
+- **Try it without a car.** Use the [Desktop Head Unit](https://developer.android.com/training/cars/testing/dhu):
+  1. Install it with `sdkmanager "extras;google;auto"`.
+  2. In Android Auto's developer menu, choose **Start head unit server**.
+  3. Run `adb forward tcp:5277 tcp:5277 && ./desktop-head-unit`.
+- **Tweak the CSS.** Debug builds enable WebView remote debugging, so you can inspect the live DOM from `chrome://inspect` while editing `assets/css/*.css`.
+- **Send a URL from adb:**
+
+  ```bash
+  adb shell am start -a android.intent.action.SEND -t text/plain \
+    --es android.intent.extra.TEXT "https://youtu.be/VIDEO_ID" \
+    -n com.h1rose.aweauto/.ShareActivity
+  ```
+- **Run the tests:** `./gradlew :app:testDebugUnitTest`
+
+## Limitations
+
+- **Android Auto's own UI stays.** The system bar and the small back button that Android Auto overlays can't be hidden by an app.
+- **Site changes break things.** The site tweaks depend on YouTube's and TVer's DOM and player internals, and can stop working when those sites change.
+- **The read-ahead buffer is experimental.**
+  - YouTube tops out at about 2 minutes.
+  - TVer can exceed the browser's MSE quota and stop loading.
+- **TVer is Japan only.** TVer needs a Japanese IP address.
+
+## Disclaimer
+
+- aweauto is an unofficial personal project. It isn't affiliated with or endorsed by Google, YouTube or TVer.
+- It uses undocumented APIs and modifies third-party web pages, which may be against those services' terms of use.
+- Use it at your own risk.
+
+## Acknowledgements
+
+- [Fermata Auto](https://github.com/AndreyPavlenko/Fermata), for showing that custom UIs on Android Auto are possible
+- [yt-cast-receiver](https://github.com/patrickkfkan/yt-cast-receiver) and [plaincast](https://github.com/aykevl/plaincast), for documenting the Lounge protocol
+- [AdGuard](https://github.com/AdguardTeam/AdGuardSDNSFilter) and [EasyList](https://easylist.to/), for the filter lists
