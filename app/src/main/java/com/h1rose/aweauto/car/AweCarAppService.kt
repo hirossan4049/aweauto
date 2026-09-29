@@ -13,7 +13,10 @@ import androidx.car.app.navigation.model.NavigationTemplate
 import androidx.car.app.validation.HostValidator
 import androidx.core.graphics.drawable.IconCompat
 import com.h1rose.aweauto.R
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
 import com.h1rose.aweauto.ui.AweNav
+import com.h1rose.aweauto.ui.onCarScreenVisibilityChanged
 
 class AweCarAppService : CarAppService() {
     // サイドロード前提の個人用アプリなので接続元の検証はしない
@@ -32,6 +35,16 @@ class AweCarAppService : CarAppService() {
 private class SurfaceScreen(carContext: CarContext) : Screen(carContext) {
     init {
         SurfaceRenderer(carContext, lifecycle)
+        // 車側の割り込み (バックカメラなど) で画面が隠れると ON_STOP、戻ると ON_START が来る
+        lifecycle.addObserver(
+            LifecycleEventObserver { _, event ->
+                when (event) {
+                    Lifecycle.Event.ON_STOP -> onCarScreenVisibilityChanged(false)
+                    Lifecycle.Event.ON_START -> onCarScreenVisibilityChanged(true)
+                    else -> Unit
+                }
+            }
+        )
     }
 
     override fun onGetTemplate(): Template {

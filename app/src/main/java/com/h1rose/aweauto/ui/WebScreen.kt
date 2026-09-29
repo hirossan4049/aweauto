@@ -91,6 +91,12 @@ private class WebSession(val key: List<Any>, val view: WebView, initialUrl: Stri
     var videoStarted by mutableStateOf(false)
     var fullscreen by mutableStateOf<Pair<View, WebChromeClient.CustomViewCallback>?>(null)
 
+    /** いま動画が再生中か (ページからの playing / pause 通知) */
+    var playing = false
+
+    /** 車の画面が割り込み (バックカメラなど) で隠れたときに再生中だったら、戻ったときに再開する */
+    var resumeOnReturn = false
+
     fun destroy() {
         (view.getTag(R.id.hls_prefetcher) as? HlsPrefetcher)?.release()
         CastBridge.detach(view)
@@ -100,6 +106,41 @@ private class WebSession(val key: List<Any>, val view: WebView, initialUrl: Stri
 }
 
 private val sessions = mutableMapOf<Route.Web, WebSession>()
+
+/**
+ * 車の画面が割り込み (バックカメラ・360 度カメラなど) で隠れた / 戻ったときに呼ぶ。
+ * 隠れている間は止めたままにし、戻ったら割り込み前に再生していた動画だけ再開する。
+ */
+fun onCarScreenVisibilityChanged(visible: Boolean) {
+    for (session in sessions.values) {
+        if (!visible) {
+            session.resumeOnReturn = session.playing
+        } else if (session.resumeOnReturn) {
+            session.resumeOnReturn = false
+            resumePlayback(session.view, attempt = 0)
+        }
+    }
+}
+
+// 戻った直後は音の出力がまだ Android Auto 側にあって再生してもすぐ止まるので、間を置いて数回試す
+private val RESUME_DELAYS_MS = longArrayOf(800, 1500, 3000, 5000)
+
+private fun resumePlayback(view: WebView, attempt: Int) {
+    if (attempt >= RESUME_DELAYS_MS.size) return
+    view.postDelayed({
+        view.evaluateJavascript(
+            "(function(){var p=document.getElementById('movie_player');" +
+                "if(p&&p.playVideo)p.playVideo();else{var v=document.querySelector('video');if(v)v.play();}})()",
+            null,
+        )
+        // 少し待って本当に動いているか確かめ、止まっていればもう一度
+        view.postDelayed({
+            view.evaluateJavascript("(function(){var v=document.querySelector('video');return !!v&&!v.paused;})()") {
+                if (it != "true") resumePlayback(view, attempt + 1)
+            }
+        }, 700)
+    }, RESUME_DELAYS_MS[attempt])
+}
 
 /** 戻る・ホームで履歴から外れた画面の WebView を捨てる */
 private fun pruneSessions() {
@@ -135,7 +176,11 @@ fun WebScreen(route: Route.Web) {
                 tverOffline,
                 onFullscreen = { created.fullscreen = it },
                 onUrl = { created.currentUrl = it },
-                onVideoPlaying = { created.videoStarted = true },
+                onVideoPlaying = {
+                    created.videoStarted = true
+                    created.playing = true
+                },
+                onVideoPaused = { created.playing = false },
             )
             created = WebSession(key, view, route.url)
             view.loadUrl(route.url)
@@ -248,6 +293,7 @@ private fun createWebView(
     onFullscreen: (Pair<View, WebChromeClient.CustomViewCallback>?) -> Unit,
     onUrl: (String) -> Unit,
     onVideoPlaying: () -> Unit,
+    onVideoPaused: () -> Unit,
 ): WebView {
     val service = route.service
     val tweaks = SiteTweaks(ctx, service, optimize = optimized, adblock = adblock, playback = playback)
@@ -278,6 +324,11 @@ private fun createWebView(
                 @JavascriptInterface
                 fun onPlaying() {
                     post(onVideoPlaying)
+                }
+
+                @JavascriptInterface
+                fun onPaused() {
+                    post(onVideoPaused)
                 }
             },
             "AweVideo",
