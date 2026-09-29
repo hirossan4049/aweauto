@@ -33,6 +33,9 @@ object Prefs {
     /** 画質の上限 (縦の画素数)。0 なら自動 */
     private val _maxHeight = MutableStateFlow(480)
     val maxHeight: StateFlow<Int> = _maxHeight.asStateFlow()
+    /** 車の画面を「左: 地図 / 右: いつもの画面」に分ける */
+    private val _splitMap = MutableStateFlow(false)
+    val splitMap: StateFlow<Boolean> = _splitMap.asStateFlow()
     private val _cast = MutableStateFlow(true)
     val cast: StateFlow<Boolean> = _cast.asStateFlow()
     private val _tverOffline = MutableStateFlow(true)
@@ -51,6 +54,7 @@ object Prefs {
         _prefetch.value = sp.getBoolean("prefetch", false)
         _tverOffline.value = sp.getBoolean("tver_offline", true)
         _cast.value = sp.getBoolean("cast", true)
+        _splitMap.value = sp.getBoolean("split_map", false)
         _filterLists.value = FilterList.entries.filter { sp.getBoolean(filterKey(it), it.defaultOn) }.toSet()
     }
 
@@ -58,6 +62,13 @@ object Prefs {
         sp.edit().putInt("max_height", height).apply()
         _maxHeight.value = height
     }
+
+    fun setSplitMap(enabled: Boolean) {
+        sp.edit().putBoolean("split_map", enabled).apply()
+        _splitMap.value = enabled
+    }
+
+    fun toggleSplitMap() = setSplitMap(!_splitMap.value)
 
     fun setCast(context: Context, enabled: Boolean) {
         sp.edit().putBoolean("cast", enabled).apply()

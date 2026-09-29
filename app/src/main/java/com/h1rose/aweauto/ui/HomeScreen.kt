@@ -1,6 +1,9 @@
 package com.h1rose.aweauto.ui
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -26,6 +29,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.outlined.Cast
+import androidx.compose.material.icons.outlined.Map
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -76,15 +80,23 @@ fun HomeScreen() {
 }
 
 @Composable
-private fun TopBar(tab: HomeTab, onTab: (HomeTab) -> Unit) {
+private fun TopBar(tab: HomeTab, onTab: (HomeTab) -> Unit) = BoxWithConstraints {
+    // 地図と並べたときなど幅が狭いときは、時計を省いてタブを詰める
+    val compact = maxWidth < 700.dp
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(start = 24.dp, end = 24.dp + LocalTopEndReserve.current, top = 14.dp, bottom = 6.dp),
+            .padding(start = if (compact) 16.dp else 24.dp, end = 24.dp + LocalTopEndReserve.current, top = 14.dp, bottom = 6.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        AppMark(32.dp)
-        Spacer(Modifier.width(18.dp))
+        if (!compact) {
+            AppMark(32.dp)
+            Spacer(Modifier.width(18.dp))
+        }
+        Row(
+            Modifier.weight(1f).horizontalScroll(rememberScrollState()),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
         HomeTab.entries.forEach { t ->
             val selected = t == tab
             Box(
@@ -92,10 +104,12 @@ private fun TopBar(tab: HomeTab, onTab: (HomeTab) -> Unit) {
                     .pressScale { onTab(t) }
                     .clip(RoundedCornerShape(50))
                     .background(if (selected) AweColors.Chip else Color.Transparent)
-                    .padding(horizontal = 16.dp, vertical = 7.dp),
+                    .padding(horizontal = if (compact) 12.dp else 16.dp, vertical = 7.dp),
             ) {
                 Text(
                     t.label,
+                    maxLines = 1,
+                    softWrap = false,
                     color = if (selected) AweColors.OnChip else AweColors.OnSurfaceDim,
                     fontSize = 15.sp,
                     fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
@@ -103,9 +117,25 @@ private fun TopBar(tab: HomeTab, onTab: (HomeTab) -> Unit) {
             }
             Spacer(Modifier.width(4.dp))
         }
-        Spacer(Modifier.weight(1f))
-        Clock()
-        Spacer(Modifier.width(14.dp))
+        }
+        if (!compact) {
+            Clock()
+            Spacer(Modifier.width(14.dp))
+        }
+        val split by Prefs.splitMap.collectAsState()
+        Box(
+            Modifier.pressScale { Prefs.toggleSplitMap() }.size(36.dp).clip(CircleShape)
+                .background(if (split) AweColors.Chip else AweColors.SurfaceHigh),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(
+                Icons.Outlined.Map,
+                contentDescription = "地図と並べる",
+                tint = if (split) AweColors.OnChip else AweColors.OnSurface,
+                modifier = Modifier.size(20.dp),
+            )
+        }
+        Spacer(Modifier.width(10.dp))
         Box(
             Modifier.pressScale { AweNav.go(Route.Pair) }.size(36.dp).clip(CircleShape).background(AweColors.SurfaceHigh),
             contentAlignment = Alignment.Center,

@@ -48,7 +48,10 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.h1rose.aweauto.BuildConfig
 import com.h1rose.aweauto.adblock.AdBlocker
+import com.h1rose.aweauto.map.DemoMapPane
+import com.h1rose.aweauto.map.MapPanes
 import com.h1rose.aweauto.adblock.FilterList
 import com.h1rose.aweauto.cast.CastStatus
 import com.h1rose.aweauto.cast.LoungeReceiver
@@ -178,6 +181,21 @@ fun SettingsScreen(onBack: (() -> Unit)?) {
                         if (status == ShizukuStatus.NO_PERMISSION) ShizukuState.requestPermission() else ShizukuState.refresh()
                     },
                 )
+            }
+            if (BuildConfig.DEBUG) {
+                item {
+                    val provider by MapPanes.provider.collectAsState()
+                    SettingRow(
+                        title = "地図枠にテスト表示を出す (開発用)",
+                        description = "MapPaneProvider の描画先とタッチの受け渡しを確かめます",
+                        checked = provider is DemoMapPane,
+                        onChange = {
+                            context.getSharedPreferences("aweauto", android.content.Context.MODE_PRIVATE)
+                                .edit().putBoolean("demo_map_pane", it).apply()
+                            MapPanes.register(if (it) DemoMapPane() else null)
+                        },
+                    )
+                }
             }
             item { SectionLabel("広告ブロック", Icons.Outlined.Shield) }
             item {

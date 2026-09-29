@@ -39,6 +39,7 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.outlined.Map
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
@@ -483,6 +484,7 @@ private fun SideRail(
         RailButton(Icons.AutoMirrored.Filled.ArrowBack, "戻る", onClick = onBack)
         RailButton(Icons.Filled.Home, "ホーム", onClick = onHome)
         RailButton(Icons.Filled.Refresh, "再読込", onClick = onReload)
+        RailButton(Icons.Outlined.Map, "地図と並べる", onClick = { Prefs.toggleSplitMap() })
         Spacer(Modifier.weight(1f))
         if (optimized) {
             Text("最適化", color = AweColors.Accent, fontSize = 10.sp)
