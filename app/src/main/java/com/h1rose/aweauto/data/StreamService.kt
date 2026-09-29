@@ -1,6 +1,12 @@
 package com.h1rose.aweauto.data
 
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Home
+import androidx.compose.material.icons.outlined.Leaderboard
+import androidx.compose.material.icons.outlined.MusicNote
+import androidx.compose.material.icons.outlined.Subscriptions
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 
 enum class UserAgentKind { MOBILE, DESKTOP }
 
@@ -44,12 +50,18 @@ enum class StreamService(
 }
 
 /** ホームの「ピックアップ」に並べるショートカット */
-data class Shortcut(val title: String, val subtitle: String, val service: StreamService, val url: String)
+data class Shortcut(
+    val title: String,
+    val subtitle: String,
+    val service: StreamService,
+    val url: String,
+    val icon: ImageVector,
+)
 
 val shortcuts = listOf(
-    Shortcut("ホーム", "YouTube", StreamService.YOUTUBE, "https://m.youtube.com/"),
-    Shortcut("音楽", "YouTube", StreamService.YOUTUBE, "https://m.youtube.com/channel/UC-9-kyTW8ZkZNDHQJ6FgpwQ"),
-    Shortcut("登録チャンネル", "YouTube", StreamService.YOUTUBE, "https://m.youtube.com/feed/subscriptions"),
-    Shortcut("ホーム", "TVer", StreamService.TVER, "https://tver.jp/"),
-    Shortcut("ランキング", "TVer", StreamService.TVER, "https://tver.jp/rankings/all"),
+    Shortcut("ホーム", "YouTube", StreamService.YOUTUBE, "https://m.youtube.com/", Icons.Outlined.Home),
+    Shortcut("音楽", "YouTube", StreamService.YOUTUBE, "https://m.youtube.com/channel/UC-9-kyTW8ZkZNDHQJ6FgpwQ", Icons.Outlined.MusicNote),
+    Shortcut("登録チャンネル", "YouTube", StreamService.YOUTUBE, "https://m.youtube.com/feed/subscriptions", Icons.Outlined.Subscriptions),
+    Shortcut("ホーム", "TVer", StreamService.TVER, "https://tver.jp/", Icons.Outlined.Home),
+    Shortcut("ランキング", "TVer", StreamService.TVER, "https://tver.jp/rankings/all", Icons.Outlined.Leaderboard),
 )

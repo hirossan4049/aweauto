@@ -36,7 +36,10 @@ English | [日本語](README.ja.md)
 - ⏳ **Loading cover.** Until playback starts you see the thumbnail and a spinner instead of WebView's grey placeholder.
 - 📲 **Send from your phone.**
   - *Share → "車の画面で開く"* from the YouTube or TVer app.
-  - **Cast from the official YouTube app** via *Link with TV code* (the Lounge protocol). This works over mobile data too, with no shared Wi-Fi needed.
+  - **Cast from the official YouTube app.**
+    - On the same Wi-Fi or tethering hotspot, **aweauto (車)** appears in the cast menu automatically (DIAL). No code needed.
+    - Anywhere else, link once with *Link with TV code* (the Lounge protocol). This works over mobile data too. The code and a QR are shown on the car screen, and the phone has a copy-and-open button.
+  - "車の画面" is published as a direct-share target, so it can appear at the top of the share sheet.
 - 🛡️ **Ad blocking.**
   - Domain rules from AdGuard DNS, EasyList and AdGuard Japanese filters, refreshed daily.
   - YouTube video ads are stripped from the player response.
@@ -101,9 +104,11 @@ Then enable unknown sources in Android Auto:
 
 ### Casting from the YouTube app
 
-1. On the car screen, open **Settings → スマホからキャスト**. A 12-digit TV code is shown.
-2. In the YouTube app, go to **Settings → Watch on TV → Link with TV code** and enter the code.
-3. From now on, **aweauto (車)** appears under the cast button.
+- **Same Wi-Fi or hotspot:** just tap the cast button in the YouTube player and pick **aweauto (車)**.
+- **Otherwise (first time only):**
+  1. Tap the cast icon on the car home screen. The 12-digit TV code and a QR are shown.
+  2. In the YouTube app, go to **You → Settings → Watch on TV → Link with TV code** and enter the code. On the phone running aweauto, use **Copy code & open YouTube** instead.
+  3. After that, **aweauto (車)** stays in the cast menu.
 
 ## Development
 

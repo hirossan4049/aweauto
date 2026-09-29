@@ -21,6 +21,7 @@ fun AweRoot() {
             when (route) {
                 Route.Home -> HomeScreen()
                 Route.Settings -> SettingsScreen(onBack = { AweNav.back() })
+                Route.Pair -> PairScreen(onBack = { AweNav.back() })
                 is Route.Web -> WebScreen(route)
             }
         }

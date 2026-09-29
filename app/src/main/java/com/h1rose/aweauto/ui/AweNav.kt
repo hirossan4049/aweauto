@@ -8,6 +8,7 @@ import kotlinx.coroutines.flow.asStateFlow
 sealed interface Route {
     data object Home : Route
     data object Settings : Route
+    data object Pair : Route
     data class Web(val service: StreamService, val url: String) : Route
 }
 

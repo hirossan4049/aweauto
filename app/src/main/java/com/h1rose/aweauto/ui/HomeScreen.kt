@@ -25,6 +25,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.outlined.Cast
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -82,12 +83,7 @@ private fun TopBar(tab: HomeTab, onTab: (HomeTab) -> Unit) {
             .padding(start = 24.dp, end = 24.dp + LocalTopEndReserve.current, top = 14.dp, bottom = 6.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Box(
-            Modifier.size(32.dp).clip(CircleShape).background(AweColors.Accent),
-            contentAlignment = Alignment.Center,
-        ) {
-            Text("a", color = AweColors.OnChip, fontWeight = FontWeight.Bold, fontSize = 16.sp)
-        }
+        AppMark(32.dp)
         Spacer(Modifier.width(18.dp))
         HomeTab.entries.forEach { t ->
             val selected = t == tab
@@ -110,6 +106,13 @@ private fun TopBar(tab: HomeTab, onTab: (HomeTab) -> Unit) {
         Spacer(Modifier.weight(1f))
         Clock()
         Spacer(Modifier.width(14.dp))
+        Box(
+            Modifier.pressScale { AweNav.go(Route.Pair) }.size(36.dp).clip(CircleShape).background(AweColors.SurfaceHigh),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(Icons.Outlined.Cast, contentDescription = "スマホからキャスト", tint = AweColors.OnSurface, modifier = Modifier.size(20.dp))
+        }
+        Spacer(Modifier.width(10.dp))
         Box(
             Modifier.pressScale { AweNav.go(Route.Settings) }.size(36.dp).clip(CircleShape).background(AweColors.SurfaceHigh),
             contentAlignment = Alignment.Center,
@@ -258,10 +261,19 @@ private fun AppCard(service: StreamService, modifier: Modifier = Modifier) {
             .pressScale { AweNav.go(Route.Web(service, service.homeUrl)) }
             .aspectRatio(16f / 9f)
             .clip(RoundedCornerShape(14.dp))
-            .background(Brush.linearGradient(listOf(service.brand, service.brand.copy(alpha = 0.55f)))),
-        contentAlignment = Alignment.Center,
+            .background(AweColors.Surface),
     ) {
-        Text(service.label, color = Color.White, fontSize = 24.sp, fontWeight = FontWeight.Black)
+        // Google TV のアプリ行のように、ブランド色を薄く敷いてロゴを真ん中に置く
+        Box(
+            Modifier.fillMaxSize().background(
+                Brush.radialGradient(listOf(service.brand.copy(alpha = 0.35f), Color.Transparent))
+            )
+        )
+        Column(Modifier.align(Alignment.Center), horizontalAlignment = Alignment.CenterHorizontally) {
+            BrandIcon(service, 56.dp)
+            Spacer(Modifier.height(8.dp))
+            Text(service.label, color = AweColors.OnSurface, fontSize = 15.sp, fontWeight = FontWeight.SemiBold)
+        }
     }
 }
 
@@ -300,8 +312,12 @@ private fun ShortcutCard(shortcut: Shortcut) {
             .background(AweColors.Surface)
             .padding(14.dp),
     ) {
-        Box(Modifier.size(10.dp).clip(CircleShape).background(shortcut.service.brand))
-        Spacer(Modifier.height(18.dp))
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            BrandIcon(shortcut.service, 22.dp)
+            Spacer(Modifier.weight(1f))
+            Icon(shortcut.icon, contentDescription = null, tint = AweColors.OnSurfaceDim, modifier = Modifier.size(20.dp))
+        }
+        Spacer(Modifier.height(14.dp))
         Text(shortcut.title, color = AweColors.OnSurface, fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
         Text(shortcut.subtitle, color = AweColors.OnSurfaceDim, fontSize = 12.sp)
     }

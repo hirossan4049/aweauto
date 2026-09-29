@@ -1,5 +1,8 @@
 package com.h1rose.aweauto.ui
 
+import android.content.ClipData
+import android.content.ClipboardManager
+import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -13,19 +16,30 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.outlined.Cast
+import androidx.compose.material.icons.outlined.History
+import androidx.compose.material.icons.outlined.Shield
+import androidx.compose.material.icons.outlined.SignalCellularAlt
+import androidx.compose.material.icons.outlined.Tune
 import androidx.compose.material3.Icon
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -43,6 +57,7 @@ import com.h1rose.aweauto.web.HlsCacheStore
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import kotlinx.coroutines.launch
 
 /** 車載画面とスマホの両方で使う設定画面。[onBack] が null なら戻るボタンを出さない */
 @Composable
@@ -84,7 +99,7 @@ fun SettingsScreen(onBack: (() -> Unit)?) {
             contentPadding = PaddingValues(start = 24.dp, end = 24.dp, bottom = 24.dp),
             verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
-            item { SectionLabel("表示の最適化") }
+            item { SectionLabel("表示の最適化", Icons.Outlined.Tune) }
             items(StreamService.entries) { service ->
                 SettingRow(
                     title = "${service.label} を車の画面向けに最適化",
@@ -93,19 +108,19 @@ fun SettingsScreen(onBack: (() -> Unit)?) {
                     onChange = { Prefs.setOptimized(service, it) },
                 )
             }
-            item { SectionLabel("スマホからキャスト") }
+            item { SectionLabel("スマホからキャスト", Icons.Outlined.Cast) }
             item {
                 SettingRow(
                     title = "YouTube アプリからのキャストを受ける",
                     description = "テレビコードでリンクすると、同じ Wi-Fi でなくてもキャストボタンからこの画面で再生できます",
                     checked = cast,
-                    onChange = { Prefs.setCast(it) },
+                    onChange = { Prefs.setCast(context, it) },
                 )
             }
             if (cast) {
                 item { PairingCard(castStatus) }
             }
-            item { SectionLabel("通信と先読み") }
+            item { SectionLabel("通信と先読み", Icons.Outlined.SignalCellularAlt) }
             item {
                 ChoiceRow(
                     title = "画質の上限",
@@ -142,7 +157,7 @@ fun SettingsScreen(onBack: (() -> Unit)?) {
                     onChange = { Prefs.setPrefetch(it) },
                 )
             }
-            item { SectionLabel("広告ブロック") }
+            item { SectionLabel("広告ブロック", Icons.Outlined.Shield) }
             item {
                 SettingRow(
                     title = "広告ブロック",
@@ -175,7 +190,7 @@ fun SettingsScreen(onBack: (() -> Unit)?) {
                     )
                 }
             }
-            item { SectionLabel("履歴") }
+            item { SectionLabel("履歴", Icons.Outlined.History) }
             item {
                 ActionRow(
                     title = "再生履歴を消去",
@@ -188,9 +203,18 @@ fun SettingsScreen(onBack: (() -> Unit)?) {
     }
 }
 
-/** テレビコードと接続状態 */
+/**
+ * スマホからのキャストのつなぎ方。
+ * - 同じ Wi-Fi / テザリング: YouTube のキャストボタンに自動で出る (DIAL)。入力不要
+ * - それ以外: 初回だけテレビコードでリンク。スマホではコピー、車の画面では同乗者向けに QR も出す
+ * 一度つながったスマホがあれば「リンク済み」だけ出してコードは畳む
+ */
 @Composable
-private fun PairingCard(status: CastStatus) {
+fun PairingCard(status: CastStatus, qrSize: androidx.compose.ui.unit.Dp = 120.dp) {
+    val isCar = LocalIsCar.current
+    var showCode by remember { mutableStateOf(false) }
+    val linked = status.linked.isNotEmpty()
+
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -198,28 +222,106 @@ private fun PairingCard(status: CastStatus) {
             .background(AweColors.Surface)
             .padding(18.dp),
     ) {
-        Text("テレビコード", color = AweColors.OnSurfaceDim, fontSize = 13.sp)
-        Text(
-            status.pairingCode ?: "取得中…",
-            color = AweColors.OnSurface,
-            fontSize = 28.sp,
-            fontWeight = FontWeight.SemiBold,
-            letterSpacing = 2.sp,
-        )
-        Spacer(Modifier.height(6.dp))
-        Text(
-            "YouTube アプリ → 設定 → テレビで見る → テレビコードでリンク で入力。一度リンクすれば以後はキャストボタンに「aweauto (車)」が出ます",
-            color = AweColors.OnSurfaceDim,
-            fontSize = 13.sp,
-        )
-        Spacer(Modifier.height(10.dp))
-        val line = when {
-            status.remotes.isNotEmpty() -> "接続中: " + status.remotes.joinToString("、")
-            status.online -> "待機中 (オンライン)"
-            status.error != null -> "接続できません: ${status.error}"
-            else -> "接続中…"
+        StatusLine(status)
+        if (linked && !showCode) {
+            Spacer(Modifier.height(10.dp))
+            Text(
+                "リンク済み: " + status.linked.joinToString("、"),
+                color = AweColors.OnSurface,
+                fontSize = 15.sp,
+            )
+            Text(
+                "YouTube アプリのキャストボタンから「${LoungeReceiver.screenName}」を選ぶだけで再生できます",
+                color = AweColors.OnSurfaceDim,
+                fontSize = 13.sp,
+            )
+            Spacer(Modifier.height(12.dp))
+            Pill("別のスマホを追加") { showCode = true }
+            return@Column
         }
-        Text(line, color = if (status.online) AweColors.Accent else AweColors.OnSurfaceDim, fontSize = 13.sp)
+
+        Spacer(Modifier.height(12.dp))
+        Text("同じ Wi-Fi・テザリングにいるスマホ", color = AweColors.Accent, fontSize = 13.sp)
+        Text(
+            "YouTube アプリのキャストボタンに「${LoungeReceiver.screenName}」が自動で出ます。入力は要りません",
+            color = AweColors.OnSurface,
+            fontSize = 14.sp,
+        )
+        Spacer(Modifier.height(16.dp))
+        Text("それ以外 (はじめの一度だけ)", color = AweColors.Accent, fontSize = 13.sp)
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Column(Modifier.weight(1f)) {
+                Text(
+                    status.pairingCode ?: "取得中…",
+                    color = AweColors.OnSurface,
+                    fontSize = 30.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    letterSpacing = 2.sp,
+                )
+                Text(
+                    "YouTube アプリ → マイページ → 設定 → テレビで見る → テレビコードでリンク に入力",
+                    color = AweColors.OnSurfaceDim,
+                    fontSize = 13.sp,
+                )
+                if (!isCar) {
+                    Spacer(Modifier.height(12.dp))
+                    CopyAndOpenButton()
+                }
+            }
+            val code = status.pairingCode
+            if (isCar && code != null) {
+                Spacer(Modifier.width(16.dp))
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    QrCode(code.replace(" ", ""), Modifier.size(qrSize))
+                    Spacer(Modifier.height(4.dp))
+                    Text("読み取るとコードをコピー", color = AweColors.OnSurfaceDim, fontSize = 11.sp)
+                }
+            }
+        }
+        if (linked) {
+            Spacer(Modifier.height(12.dp))
+            Pill("閉じる") { showCode = false }
+        }
+    }
+}
+
+@Composable
+private fun StatusLine(status: CastStatus) {
+    val (text, color) = when {
+        status.remotes.isNotEmpty() -> "接続中: " + status.remotes.joinToString("、") to AweColors.Accent
+        status.online -> "待機中 (オンライン)" to AweColors.Accent
+        status.error != null -> "接続できません: ${status.error}" to AweColors.OnSurfaceDim
+        else -> "接続中…" to AweColors.OnSurfaceDim
+    }
+    Text(text, color = color, fontSize = 13.sp)
+}
+
+/** その場で新しいコードを取ってコピーし、YouTube アプリを開く (スマホ側だけ) */
+@Composable
+private fun CopyAndOpenButton() {
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    Pill("コードをコピーして YouTube を開く", primary = true) {
+        scope.launch {
+            val code = LoungeReceiver.freshPairingCode()?.replace(" ", "") ?: return@launch
+            val clipboard = context.getSystemService(ClipboardManager::class.java)
+            clipboard.setPrimaryClip(ClipData.newPlainText("テレビコード", code))
+            Toast.makeText(context, "コピーしました。テレビコードでリンク の欄に貼り付けてください", Toast.LENGTH_LONG).show()
+            context.packageManager.getLaunchIntentForPackage("com.google.android.youtube")?.let(context::startActivity)
+        }
+    }
+}
+
+@Composable
+private fun Pill(label: String, primary: Boolean = false, onClick: () -> Unit) {
+    Box(
+        Modifier
+            .pressScale(onClick)
+            .clip(RoundedCornerShape(50))
+            .background(if (primary) AweColors.Chip else AweColors.SurfaceHigh)
+            .padding(horizontal = 18.dp, vertical = 9.dp),
+    ) {
+        Text(label, color = if (primary) AweColors.OnChip else AweColors.OnSurface, fontSize = 14.sp)
     }
 }
 
@@ -285,14 +387,15 @@ private fun ActionRow(title: String, description: String, action: String, onClic
 }
 
 @Composable
-private fun SectionLabel(text: String) {
-    Text(
-        text,
-        color = AweColors.Accent,
-        fontSize = 13.sp,
-        fontWeight = FontWeight.SemiBold,
+private fun SectionLabel(text: String, icon: ImageVector) {
+    Row(
         modifier = Modifier.padding(top = 8.dp, bottom = 2.dp),
-    )
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Icon(icon, contentDescription = null, tint = AweColors.Accent, modifier = Modifier.size(16.dp))
+        Spacer(Modifier.width(6.dp))
+        Text(text, color = AweColors.Accent, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
+    }
 }
 
 @Composable
@@ -316,5 +419,31 @@ private fun SettingRow(title: String, description: String, checked: Boolean, onC
             onCheckedChange = onChange,
             colors = SwitchDefaults.colors(checkedTrackColor = AweColors.Accent),
         )
+    }
+}
+
+/** 車の画面のホームから開く、キャストのつなぎ方だけの画面 */
+@Composable
+fun PairScreen(onBack: () -> Unit) {
+    val status by LoungeReceiver.status.collectAsState()
+    Column(Modifier.fillMaxSize().background(AweColors.Background)) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(start = 24.dp, end = 24.dp + LocalTopEndReserve.current, top = 14.dp, bottom = 14.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Box(
+                Modifier.pressScale(onBack).size(40.dp).clip(CircleShape).background(AweColors.SurfaceHigh),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "戻る", tint = AweColors.OnSurface)
+            }
+            Spacer(Modifier.width(16.dp))
+            Text("スマホからキャスト", color = AweColors.OnSurface, fontSize = 22.sp, fontWeight = FontWeight.SemiBold)
+        }
+        Box(Modifier.padding(horizontal = 24.dp)) {
+            PairingCard(status, qrSize = 170.dp)
+        }
     }
 }

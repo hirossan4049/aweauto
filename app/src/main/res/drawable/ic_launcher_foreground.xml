@@ -1,19 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- 108dp の中心 66dp が安全領域。テレビ (再生マーク付き) とスタンド -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="108dp"
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
-    <!-- 画面 -->
     <path
         android:fillColor="#8AB4F8"
-        android:pathData="M34,38h40a4,4 0,0 1,4 4v22a4,4 0,0 1,-4 4h-40a4,4 0,0 1,-4 -4v-22a4,4 0,0 1,4 -4z" />
-    <!-- 再生 -->
+        android:pathData="M35,36h38a5,5 0,0 1,5 5v24a5,5 0,0 1,-5 5h-38a5,5 0,0 1,-5 -5v-24a5,5 0,0 1,5 -5z" />
     <path
-        android:fillColor="#1B1D24"
-        android:pathData="M49,45 L62,53 L49,61 Z" />
-    <!-- スタンド -->
+        android:fillColor="#111318"
+        android:pathData="M49,45.5 L63,53 L49,60.5 Z" />
     <path
         android:fillColor="#8AB4F8"
-        android:pathData="M44,72h20v3h-20z" />
+        android:pathData="M44,74.5h20a1.75,1.75 0,0 1,0 3.5h-20a1.75,1.75 0,0 1,0 -3.5z" />
 </vector>

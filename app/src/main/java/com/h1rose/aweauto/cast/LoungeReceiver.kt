@@ -45,7 +45,10 @@ data class CastStatus(
     val online: Boolean = false,
     /** スマホの YouTube アプリで入力する 12 桁のテレビコード */
     val pairingCode: String? = null,
+    /** いまつながっているスマホ */
     val remotes: List<String> = emptyList(),
+    /** 一度でもつながったことのあるスマホ (リンク済み) */
+    val linked: List<String> = emptyList(),
     val error: String? = null,
 )
 
@@ -98,6 +101,43 @@ object LoungeReceiver {
             sp.edit().putString("device_id", it).apply()
         }
         screenId = sp.getString("screen_id", "") ?: ""
+        _status.value = _status.value.copy(linked = sp.getStringSet("linked", emptySet()).orEmpty().sorted())
+    }
+
+    /** 画面 ID。DIAL の応答に載せる */
+    val currentScreenId: String get() = screenId
+
+    /**
+     * 設定画面の「コピー」用。期限切れを避けるため、その場で新しいコードを取り直して返す。
+     * 取れなければ今表示しているコードを返す。
+     */
+    suspend fun freshPairingCode(): String? = kotlinx.coroutines.withContext(Dispatchers.IO) {
+        runCatching { requestPairingCode() }.getOrNull() ?: _status.value.pairingCode
+    }
+
+    /** DIAL (同じ Wi-Fi) でスマホから届いたペアリングコードを登録する。これでテレビコードの入力が要らない */
+    fun registerPairingCode(code: String) {
+        scope.launch {
+            runCatching {
+                post(
+                    "$BASE/pairing/register_pairing_code".toHttpUrl(),
+                    mapOf(
+                        "access_type" to "permanent",
+                        "app" to APP,
+                        "pairing_code" to code,
+                        "screen_id" to screenId,
+                        "screen_name" to screenName,
+                        "device_id" to deviceId,
+                    ),
+                )
+                Log.i(TAG, "registered DIAL pairing code")
+            }.onFailure { Log.w(TAG, "register pairing code failed", it) }
+        }
+    }
+
+    fun forgetLinked() {
+        sp.edit().remove("linked").apply()
+        _status.value = _status.value.copy(linked = emptyList())
     }
 
     fun start(player: LoungePlayer) {
@@ -155,23 +195,27 @@ object LoungeReceiver {
 
     private suspend fun refreshPairingCodeLoop() {
         while (true) {
-            runCatching {
-                val code = post(
-                    "$BASE/pairing/get_pairing_code?ctx=pair".toHttpUrl(),
-                    mapOf(
-                        "access_type" to "permanent",
-                        "app" to APP,
-                        "lounge_token" to loungeToken,
-                        "screen_id" to screenId,
-                        "screen_name" to screenName,
-                        "device_id" to deviceId,
-                    ),
-                ).trim()
-                _status.value = _status.value.copy(pairingCode = code.chunked(3).joinToString(" "))
-                Log.i(TAG, "pairing code refreshed")
-            }.onFailure { Log.w(TAG, "pairing code failed", it) }
+            runCatching { requestPairingCode() }.onFailure { Log.w(TAG, "pairing code failed", it) }
             delay(5 * 60_000L)
         }
+    }
+
+    private fun requestPairingCode(): String {
+        check(loungeToken.isNotEmpty()) { "not ready" }
+        val code = post(
+            "$BASE/pairing/get_pairing_code?ctx=pair".toHttpUrl(),
+            mapOf(
+                "access_type" to "permanent",
+                "app" to APP,
+                "lounge_token" to loungeToken,
+                "screen_id" to screenId,
+                "screen_name" to screenName,
+                "device_id" to deviceId,
+            ),
+        ).trim()
+        val pretty = code.chunked(3).joinToString(" ")
+        _status.value = _status.value.copy(pairingCode = pretty)
+        return pretty
     }
 
     /** 初回 bind → long-poll をつなぎ直し続ける。SID が無効になったら bind からやり直す */
@@ -233,7 +277,9 @@ object LoungeReceiver {
                     .map { devices!!.getJSONObject(it) }
                     .filter { it.optString("type") == "REMOTE_CONTROL" }
                     .map { it.optString("name").ifEmpty { it.optString("clientName", "スマホ") } }
-                _status.value = _status.value.copy(remotes = remotes)
+                val linked = (_status.value.linked + remotes).distinct().sorted()
+                if (linked != _status.value.linked) sp.edit().putStringSet("linked", linked.toSet()).apply()
+                _status.value = _status.value.copy(remotes = remotes, linked = linked)
                 if (remotes.isNotEmpty()) sendFullState()
             }
             "remoteConnected" -> sendFullState()

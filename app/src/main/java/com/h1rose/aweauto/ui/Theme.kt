@@ -54,5 +54,8 @@ fun Modifier.pressScale(onClick: () -> Unit): Modifier = composed {
         .clickable(interactionSource = interaction, indication = null, onClick = onClick)
 }
 
+/** 車の画面で描いているか (スマホのプレビュー・設定画面では false) */
+val LocalIsCar = staticCompositionLocalOf { false }
+
 /** 画面右上で Android Auto のボタンと重ならないように空けておく幅 (スマホのプレビューでは 0) */
 val LocalTopEndReserve = staticCompositionLocalOf { 0.dp }

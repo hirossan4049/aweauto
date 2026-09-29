@@ -21,6 +21,7 @@ import androidx.savedstate.SavedStateRegistryOwner
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
 import androidx.compose.ui.unit.dp
 import com.h1rose.aweauto.ui.AweRoot
+import com.h1rose.aweauto.ui.LocalIsCar
 import com.h1rose.aweauto.ui.LocalTopEndReserve
 
 /**
@@ -65,6 +66,7 @@ class CarPresentation(
             LocalDensity provides Density(density, fontScale = 1f),
             // 右上には Android Auto の「戻る」ボタンが重なる (数秒で自動的に隠れる)
             LocalTopEndReserve provides 110.dp,
+            LocalIsCar provides true,
         ) {
             AweRoot()
         }

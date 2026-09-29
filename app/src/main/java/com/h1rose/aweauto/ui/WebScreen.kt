@@ -380,16 +380,7 @@ private fun SideRail(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
-        Box(
-            Modifier.size(40.dp).clip(CircleShape).background(service.brand),
-            contentAlignment = Alignment.Center,
-        ) {
-            if (service == StreamService.YOUTUBE) {
-                Icon(Icons.Filled.PlayArrow, contentDescription = service.label, tint = Color.White)
-            } else {
-                Text(service.label.take(1), color = Color.White, fontSize = 18.sp, fontWeight = FontWeight.Black)
-            }
-        }
+        BrandIcon(service, 40.dp)
         Spacer(Modifier.height(6.dp))
         RailButton(Icons.AutoMirrored.Filled.ArrowBack, "戻る", onClick = onBack)
         RailButton(Icons.Filled.Home, "ホーム", onClick = onHome)

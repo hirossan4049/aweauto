@@ -5,6 +5,7 @@ import android.content.SharedPreferences
 import com.h1rose.aweauto.adblock.AdBlocker
 import com.h1rose.aweauto.adblock.FilterList
 import com.h1rose.aweauto.cast.CastBridge
+import com.h1rose.aweauto.cast.DialServer
 import com.h1rose.aweauto.cast.LoungeReceiver
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -58,10 +59,16 @@ object Prefs {
         _maxHeight.value = height
     }
 
-    fun setCast(enabled: Boolean) {
+    fun setCast(context: Context, enabled: Boolean) {
         sp.edit().putBoolean("cast", enabled).apply()
         _cast.value = enabled
-        if (enabled) LoungeReceiver.start(CastBridge) else LoungeReceiver.stop()
+        if (enabled) {
+            LoungeReceiver.start(CastBridge)
+            DialServer.start(context)
+        } else {
+            LoungeReceiver.stop()
+            DialServer.stop()
+        }
     }
 
     fun setTverOffline(enabled: Boolean) {
