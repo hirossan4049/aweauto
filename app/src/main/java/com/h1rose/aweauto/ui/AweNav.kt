@@ -2,6 +2,8 @@ package com.h1rose.aweauto.ui
 
 import com.h1rose.aweauto.data.Prefs
 import com.h1rose.aweauto.data.StreamService
+import com.h1rose.aweauto.map.MapLayouts
+import com.h1rose.aweauto.map.MapMode
 import com.h1rose.aweauto.map.MapPanes
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -32,7 +34,9 @@ object AweNav {
     fun home() = go(Route.Home)
 
     fun back() {
-        if (Prefs.splitMap.value && MapPanes.provider.value?.onBack() == true) return
+        val layout = MapLayouts.layout.value
+        val mapIsMain = layout.mode == MapMode.PIP && layout.mapFirst
+        if (Prefs.splitMap.value && mapIsMain && MapPanes.provider.value?.onBack() == true) return
         if (webBackHandler?.invoke() == true) return
         if (stack.value.size > 1) stack.value = stack.value.dropLast(1)
     }

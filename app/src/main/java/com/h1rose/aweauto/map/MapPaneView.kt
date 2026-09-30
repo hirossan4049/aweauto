@@ -19,6 +19,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
@@ -26,19 +27,29 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import com.h1rose.aweauto.ui.AweColors
+import com.h1rose.aweauto.ui.LocalIsCar
 
-/** 地図枠。登録された [MapPaneProvider] に描画先とタッチを渡す */
+/**
+ * 地図枠。登録された [MapPaneProvider] に描画先とタッチを渡す。
+ * [overlay] は地図が小窓 (PiP) で全面の画面の上に重なるとき true。
+ * SurfaceView は既定ではウィンドウの下に描かれ、全面の画面の上に小さく出すと画面全体が黒く抜けてしまうので、
+ * そのときだけウィンドウより上 (setZOrderOnTop) に出す。この状態ではウィンドウに描いたものは地図の下に隠れる。
+ */
 @Composable
-fun MapPane(modifier: Modifier = Modifier) {
+fun MapPane(modifier: Modifier = Modifier, overlay: Boolean = false) {
     val provider by MapPanes.provider.collectAsState()
     Box(modifier.background(AweColors.Surface)) {
         val p = provider
         if (p == null) {
             Placeholder()
-        } else {
+        } else if (!LocalIsCar.current) {
+            // スマホのプレビューと車の画面で同じ中身を取り合わないよう、中身は車の画面にだけ出す
+            Placeholder(title = "地図は車の画面に表示中", detail = p.label)
+        } else key(overlay) {
+            // 重なり順は作成時にしか変えられないので、切り替え時は SurfaceView を作り直す
             AndroidView(
                 modifier = Modifier.fillMaxSize(),
-                factory = { ctx -> ProviderSurfaceView(ctx, p) },
+                factory = { ctx -> ProviderSurfaceView(ctx, p).apply { setZOrderOnTop(overlay) } },
                 update = { it.provider = p },
                 onRelease = { it.provider?.detach() },
             )
@@ -56,10 +67,14 @@ private class ProviderSurfaceView(
             if (field === value) return
             field?.detach()
             field = value
-            if (holder.surface?.isValid == true && width > 0) {
-                value?.attach(holder.surface, width, height, resources.displayMetrics.densityDpi)
-            }
+            attached = null
+            scheduleAttach()
         }
+
+    /** 最後に attach した大きさ。同じなら呼び直さない */
+    private var attached: Pair<Int, Int>? = null
+    private var surfaceSize = 0 to 0
+    private val attachNow = Runnable { attachIfReady() }
 
     init {
         holder.addCallback(this)
@@ -68,11 +83,32 @@ private class ProviderSurfaceView(
     override fun surfaceCreated(holder: SurfaceHolder) = Unit
 
     override fun surfaceChanged(holder: SurfaceHolder, format: Int, width: Int, height: Int) {
-        provider?.attach(holder.surface, width, height, resources.displayMetrics.densityDpi)
+        surfaceSize = width to height
+        scheduleAttach()
     }
 
     override fun surfaceDestroyed(holder: SurfaceHolder) {
-        provider?.detach()
+        removeCallbacks(attachNow)
+        if (attached != null) provider?.detach()
+        attached = null
+    }
+
+    /**
+     * 並べ方の切り替えでは大きさがアニメーションで毎フレーム変わる。そのたびに attach すると
+     * 中身 (他アプリの表示など) が作り直しになって重いので、大きさが落ち着いてから 1 回だけ呼ぶ。
+     */
+    private fun scheduleAttach() {
+        removeCallbacks(attachNow)
+        postDelayed(attachNow, ATTACH_SETTLE_MS)
+    }
+
+    private fun attachIfReady() {
+        val p = provider ?: return
+        val (w, h) = surfaceSize
+        if (w < MIN_SIZE_PX || h < MIN_SIZE_PX || holder.surface?.isValid != true) return
+        if (attached == surfaceSize) return
+        attached = surfaceSize
+        p.attach(holder.surface, w, h, resources.displayMetrics.densityDpi)
     }
 
     @SuppressLint("ClickableViewAccessibility")
@@ -82,8 +118,14 @@ private class ProviderSurfaceView(
     }
 }
 
+private const val ATTACH_SETTLE_MS = 300L
+private const val MIN_SIZE_PX = 16
+
 @Composable
-private fun Placeholder() {
+private fun Placeholder(
+    title: String = "地図の表示方法が設定されていません",
+    detail: String = "MapPanes.register(...) で MapPaneProvider を登録すると、ここに表示されます",
+) {
     Column(
         modifier = Modifier.fillMaxSize().padding(24.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -92,13 +134,13 @@ private fun Placeholder() {
         Icon(Icons.Outlined.Map, contentDescription = null, tint = AweColors.OnSurfaceDim, modifier = Modifier.size(40.dp))
         Spacer(Modifier.height(12.dp))
         Text(
-            "地図の表示方法が設定されていません",
+            title,
             color = AweColors.OnSurface,
             fontSize = 15.sp,
             textAlign = TextAlign.Center,
         )
         Text(
-            "MapPanes.register(...) で MapPaneProvider を登録すると、ここに表示されます",
+            detail,
             color = AweColors.OnSurfaceDim,
             fontSize = 12.sp,
             textAlign = TextAlign.Center,

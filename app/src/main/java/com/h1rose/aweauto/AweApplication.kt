@@ -8,6 +8,7 @@ import com.h1rose.aweauto.cast.DialServer
 import com.h1rose.aweauto.cast.LoungeReceiver
 import com.h1rose.aweauto.data.Prefs
 import com.h1rose.aweauto.map.DemoMapPane
+import com.h1rose.aweauto.map.MapLayouts
 import com.h1rose.aweauto.map.MapPanes
 import com.h1rose.aweauto.map.NativeAppMapPane
 import com.h1rose.aweauto.map.NativeMapApp
@@ -17,6 +18,7 @@ class AweApplication : Application() {
     override fun onCreate() {
         super.onCreate()
         Prefs.init(this)
+        MapLayouts.init(this)
         AdBlocker.init(this) { Prefs.filterLists.value }
         LoungeReceiver.init(this)
         LoungeReceiver.screenName = "aweauto (車)"

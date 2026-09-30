@@ -17,7 +17,10 @@ interface MapPaneProvider {
     /** 表示名 (設定画面に出す) */
     val label: String
 
-    /** 地図枠が表示された / サイズが変わった。surface はこの大きさ (px) で描く */
+    /**
+     * 地図枠が表示された / サイズが変わった。surface はこの大きさ (px) で描く。
+     * 並べ方の切り替え中は呼ばれず、大きさが落ち着いてから 1 回だけ呼ばれる。
+     */
     fun attach(surface: Surface, width: Int, height: Int, densityDpi: Int)
 
     /** 地図枠が隠れた。surface はもう使えない */
