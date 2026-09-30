@@ -12,6 +12,7 @@ import com.h1rose.aweauto.map.MapLayouts
 import com.h1rose.aweauto.map.MapPanes
 import com.h1rose.aweauto.map.NativeAppMapPane
 import com.h1rose.aweauto.map.NativeMapApp
+import com.h1rose.aweauto.shizuku.ShizukuKeeper
 import com.h1rose.aweauto.shizuku.ShizukuState
 
 class AweApplication : Application() {
@@ -27,6 +28,7 @@ class AweApplication : Application() {
             DialServer.start(this)
         }
         ShareTargets.publish(this)
+        ShizukuKeeper.init(this)
         ShizukuState.init()
         // 開発用: adb shell am start ... --ez demo_map true で地図枠のテスト表示を出せるようにする代わりに、
         // debug ビルドでは起動時に DEMO_MAP_PANE が有効ならテスト表示を登録する

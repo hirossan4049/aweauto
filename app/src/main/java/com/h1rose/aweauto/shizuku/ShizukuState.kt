@@ -15,9 +15,17 @@ object ShizukuState {
     private val _status = MutableStateFlow(ShizukuStatus.NOT_RUNNING)
     val status: StateFlow<ShizukuStatus> = _status.asStateFlow()
 
+    /** 止まったら自動で起動し直すか (設定) */
+    @Volatile
+    var autoRestart = true
+
     fun init() {
         Shizuku.addBinderReceivedListenerSticky { refresh() }
-        Shizuku.addBinderDeadListener { refresh() }
+        Shizuku.addBinderDeadListener {
+            refresh()
+            // 車につないだときなどに止まったら、スマホ内の adb から起動し直す
+            if (autoRestart) ShizukuKeeper.ensureRunning()
+        }
         Shizuku.addRequestPermissionResultListener { _, _ -> refresh() }
         refresh()
     }

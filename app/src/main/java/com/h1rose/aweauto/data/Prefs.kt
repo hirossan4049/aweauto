@@ -6,6 +6,7 @@ import com.h1rose.aweauto.adblock.AdBlocker
 import com.h1rose.aweauto.adblock.FilterList
 import com.h1rose.aweauto.cast.CastBridge
 import com.h1rose.aweauto.cast.DialServer
+import com.h1rose.aweauto.shizuku.ShizukuState
 import com.h1rose.aweauto.cast.LoungeReceiver
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -38,6 +39,8 @@ object Prefs {
     val splitMap: StateFlow<Boolean> = _splitMap.asStateFlow()
     private val _mapApp = MutableStateFlow("google")
     val mapApp: StateFlow<String> = _mapApp.asStateFlow()
+    private val _shizukuAutoRestart = MutableStateFlow(true)
+    val shizukuAutoRestart: StateFlow<Boolean> = _shizukuAutoRestart.asStateFlow()
     private val _cast = MutableStateFlow(true)
     val cast: StateFlow<Boolean> = _cast.asStateFlow()
     private val _tverOffline = MutableStateFlow(true)
@@ -56,6 +59,8 @@ object Prefs {
         _prefetch.value = sp.getBoolean("prefetch", false)
         _tverOffline.value = sp.getBoolean("tver_offline", true)
         _cast.value = sp.getBoolean("cast", true)
+        _shizukuAutoRestart.value = sp.getBoolean("shizuku_auto_restart", true)
+        ShizukuState.autoRestart = _shizukuAutoRestart.value
         _splitMap.value = sp.getBoolean("split_map", false)
         _mapApp.value = sp.getString("map_app", "google") ?: "google"
         _filterLists.value = FilterList.entries.filter { sp.getBoolean(filterKey(it), it.defaultOn) }.toSet()
@@ -76,6 +81,12 @@ object Prefs {
     fun setMapApp(id: String) {
         sp.edit().putString("map_app", id).apply()
         _mapApp.value = id
+    }
+
+    fun setShizukuAutoRestart(enabled: Boolean) {
+        sp.edit().putBoolean("shizuku_auto_restart", enabled).apply()
+        _shizukuAutoRestart.value = enabled
+        ShizukuState.autoRestart = enabled
     }
 
     fun setCast(context: Context, enabled: Boolean) {

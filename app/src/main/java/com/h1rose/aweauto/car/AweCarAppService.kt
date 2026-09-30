@@ -15,6 +15,9 @@ import androidx.core.graphics.drawable.IconCompat
 import com.h1rose.aweauto.R
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
+import com.h1rose.aweauto.data.Prefs
+import com.h1rose.aweauto.shizuku.ShizukuKeeper
+import com.h1rose.aweauto.shizuku.ShizukuState
 import com.h1rose.aweauto.ui.AweNav
 import com.h1rose.aweauto.ui.onCarScreenVisibilityChanged
 
@@ -23,6 +26,14 @@ class AweCarAppService : CarAppService() {
     override fun createHostValidator(): HostValidator = HostValidator.ALLOW_ALL_HOSTS_VALIDATOR
 
     override fun onCreateSession(): Session = object : Session() {
+        init {
+            // 車につながった直後は USB のモード切り替えで Shizuku が止まっていることがある
+            if (Prefs.shizukuAutoRestart.value) {
+                ShizukuState.refresh()
+                ShizukuKeeper.ensureRunning()
+            }
+        }
+
         override fun onCreateScreen(intent: Intent): Screen = SurfaceScreen(carContext)
     }
 }

@@ -59,6 +59,7 @@ import com.h1rose.aweauto.cast.CastStatus
 import com.h1rose.aweauto.cast.LoungeReceiver
 import com.h1rose.aweauto.data.Prefs
 import com.h1rose.aweauto.data.StreamService
+import com.h1rose.aweauto.shizuku.ShizukuKeeper
 import com.h1rose.aweauto.shizuku.ShizukuState
 import com.h1rose.aweauto.shizuku.ShizukuStatus
 import com.h1rose.aweauto.web.HlsCacheStore
@@ -197,6 +198,29 @@ fun SettingsScreen(onBack: (() -> Unit)?) {
                     onClick = {
                         if (status == ShizukuStatus.NO_PERMISSION) ShizukuState.requestPermission() else ShizukuState.refresh()
                     },
+                )
+            }
+            item {
+                val auto by Prefs.shizukuAutoRestart.collectAsState()
+                SettingRow(
+                    title = "止まったら自動で起動し直す",
+                    description = "車につないだときなどに Shizuku が止まったら、スマホ内の adb から起動し直します。" +
+                        "スマホの再起動後に一度だけ PC で scripts/aw.sh tcpip を実行してください",
+                    checked = auto,
+                    onChange = { Prefs.setShizukuAutoRestart(it) },
+                )
+            }
+            item {
+                val keeper by ShizukuKeeper.status.collectAsState()
+                ActionRow(
+                    title = "今すぐ起動し直す",
+                    description = when {
+                        keeper.running -> "起動中…"
+                        keeper.lastResult != null -> keeper.lastResult!!
+                        else -> "初回はスマホに「USB デバッグを許可しますか」が出るので「常に許可」してください"
+                    },
+                    action = "起動",
+                    onClick = { ShizukuKeeper.restartNow() },
                 )
             }
             if (BuildConfig.DEBUG) {

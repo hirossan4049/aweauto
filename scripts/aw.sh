@@ -27,6 +27,9 @@ usage() {
 Shizuku
   shizuku            Shizuku を起動 (Android 9 は再起動のたびに必要)
   shizuku-status     Shizuku サーバーが動いているか
+  tcpip              スマホ内の adb を 5555 番で待ち受けさせる (再起動まで有効)
+                     aweauto が車につないだときに止まった Shizuku を自分で起動し直せるようになる
+                     注意: 同じネットワークの他の機器からも adb 接続を受け付ける状態になる
 
 車の画面 (Desktop Head Unit)
   dhu                Android Auto のヘッドユニットサーバーにつないで DHU を起動
@@ -94,6 +97,14 @@ cmd_shizuku() {
   need_device
   # アプリを開いたことがあれば start.sh があるが、無くても APK 同梱の起動用バイナリで起動できる
   adb_ shell "$(shizuku_lib)"
+}
+
+cmd_tcpip() {
+  need_device
+  adb_ tcpip 5555
+  # tcpip に切り替えると USB 側の接続が一度切れるので戻るまで待つ
+  adb_ wait-for-device
+  echo "スマホ内の adb が 5555 番で待ち受け中です (再起動まで有効)"
 }
 
 cmd_shizuku_status() {
@@ -176,6 +187,7 @@ main() {
     logs) cmd_logs "$@" ;;
     shizuku) cmd_shizuku ;;
     shizuku-status) cmd_shizuku_status ;;
+    tcpip) cmd_tcpip ;;
     dhu) cmd_dhu "$@" ;;
     dhu-720) cmd_dhu_720 ;;
     send) cmd_send "$@" ;;

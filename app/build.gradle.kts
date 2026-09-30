@@ -55,6 +55,8 @@ dependencies {
     implementation("com.google.zxing:core:3.5.3")
     implementation("dev.rikka.shizuku:api:13.1.5")
     implementation("dev.rikka.shizuku:provider:13.1.5")
+    // Shizuku が止まったときに、スマホ内の adb (localhost:5555) から起動し直す
+    implementation("dev.mobile:dadb:2.0.0")
     implementation("androidx.sharetarget:sharetarget:1.2.0")
     implementation("androidx.compose.material:material-icons-extended")
     implementation("io.coil-kt.coil3:coil-compose:3.0.4")
