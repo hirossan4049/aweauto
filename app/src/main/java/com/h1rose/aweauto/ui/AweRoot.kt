@@ -22,6 +22,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.OpenInFull
+import androidx.compose.material.icons.outlined.OpenWith
 import androidx.compose.material.icons.outlined.PictureInPictureAlt
 import androidx.compose.material.icons.outlined.SwapHoriz
 import androidx.compose.material.icons.outlined.ViewColumn
@@ -85,7 +86,7 @@ fun AweRoot() {
                 MapMode.SPLIT -> SplitDivider(layout, maxWidth)
                 MapMode.PIP -> {
                     val small = if (layout.mapFirst) screenRect else mapRect
-                    PipControls(small, maxWidth, maxHeight, layout)
+                    PipControls(small, maxHeight, layout)
                 }
             }
         }
@@ -177,57 +178,25 @@ private fun SplitDivider(layout: MapLayout, width: Dp) {
 }
 
 /**
- * 小窓の操作。小窓をドラッグすると一番近い隅へ移動。
- * ボタン (入れ替え・大きさ・左右分割に戻す) は小窓の外側に並べる。地図が小窓のときは
- * 地図がウィンドウより上に描かれ、小窓の中に置いたボタンは隠れてしまうため。
+ * 小窓の操作ボタン (移動・入れ替え・大きさ・左右分割に戻す)。小窓の外側に並べる。
+ * 小窓の上には何も重ねない (重ねると小窓の中身へのタップを横取りしてしまうため)。
+ * 地図が小窓のときは地図がウィンドウより上に描かれ、小窓の中のボタンは隠れてしまうためでもある。
  */
 @Composable
-private fun PipControls(small: PaneRect, w: Dp, h: Dp, layout: MapLayout) {
-    val density = LocalDensity.current
+private fun PipControls(small: PaneRect, h: Dp, layout: MapLayout) {
     val barHeight = 40.dp
     val top = layout.pipCorner == PipCorner.TOP_START || layout.pipCorner == PipCorner.TOP_END
     // 小窓が上側なら下に、下側なら上にボタンを出す
     val barY = if (top) small.y + small.h + 6.dp else small.y - barHeight - 6.dp
-
-    Box(
-        Modifier
-            .zIndex(2f)
-            .offset(small.x, small.y)
-            .size(small.w, small.h)
-            .pointerInput(w, h, layout.pipCorner) {
-                var dx = 0f
-                var dy = 0f
-                detectDragGestures(
-                    onDragStart = { dx = 0f; dy = 0f },
-                    onDragEnd = {
-                        val cx = with(density) { (small.x + small.w / 2).toPx() } + dx
-                        val cy = with(density) { (small.y + small.h / 2).toPx() } + dy
-                        val right = cx > with(density) { (w / 2).toPx() }
-                        val bottom = cy > with(density) { (h / 2).toPx() }
-                        MapLayouts.setPipCorner(
-                            when {
-                                !bottom && !right -> PipCorner.TOP_START
-                                !bottom && right -> PipCorner.TOP_END
-                                bottom && !right -> PipCorner.BOTTOM_START
-                                else -> PipCorner.BOTTOM_END
-                            }
-                        )
-                    },
-                ) { change, drag ->
-                    change.consume()
-                    dx += drag.x
-                    dy += drag.y
-                }
-            },
-    )
     Row(
         Modifier
             .zIndex(2f)
-            .offset(small.x, barY)
+            .offset(small.x, barY.coerceIn(0.dp, h - barHeight))
             .size(small.w, barHeight),
         horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End),
         verticalAlignment = Alignment.CenterVertically,
     ) {
+        ControlButton(Icons.Outlined.OpenWith, "隅を移動", small = true) { MapLayouts.cyclePipCorner() }
         ControlButton(Icons.Outlined.SwapHoriz, "入れ替え", small = true) { MapLayouts.swap() }
         ControlButton(Icons.Outlined.OpenInFull, "大きさ", small = true) { MapLayouts.cyclePipScale() }
         ControlButton(Icons.Outlined.ViewColumn, "左右に並べる", small = true) { MapLayouts.togglePip() }

@@ -81,4 +81,15 @@ object MapLayouts {
     }
 
     fun setPipCorner(corner: PipCorner) = update { it.copy(pipCorner = corner) }
+
+    /** 右下 → 左下 → 左上 → 右上 → 右下 と時計回りに移動 */
+    fun cyclePipCorner() = update { l ->
+        val next = when (l.pipCorner) {
+            PipCorner.BOTTOM_END -> PipCorner.BOTTOM_START
+            PipCorner.BOTTOM_START -> PipCorner.TOP_START
+            PipCorner.TOP_START -> PipCorner.TOP_END
+            PipCorner.TOP_END -> PipCorner.BOTTOM_END
+        }
+        l.copy(pipCorner = next)
+    }
 }
