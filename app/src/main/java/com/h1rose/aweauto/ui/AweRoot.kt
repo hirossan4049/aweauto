@@ -1,7 +1,9 @@
 package com.h1rose.aweauto.ui
 
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
@@ -47,6 +49,9 @@ import com.h1rose.aweauto.map.MapPane
 import com.h1rose.aweauto.map.PipCorner
 
 private val DividerWidth = 2.dp
+
+/** 並べ方を変えるときの動き */
+private val LayoutMotion = tween<Dp>(durationMillis = 160, easing = FastOutSlowInEasing)
 private val PipMargin = 16.dp
 
 /** 画面内の位置と大きさ */
@@ -130,10 +135,11 @@ private fun paneRects(layout: MapLayout, w: Dp, h: Dp): Pair<PaneRect, PaneRect>
 
 @Composable
 private fun animateRect(r: PaneRect): PaneRect {
-    val x by animateDpAsState(r.x, label = "x")
-    val y by animateDpAsState(r.y, label = "y")
-    val w by animateDpAsState(r.w, label = "w")
-    val h by animateDpAsState(r.h, label = "h")
+    // 地図枠は大きさが変わるたびに描き直しになるので、ばねではなく短い時間で決まった動きにする
+    val x by animateDpAsState(r.x, LayoutMotion, label = "x")
+    val y by animateDpAsState(r.y, LayoutMotion, label = "y")
+    val w by animateDpAsState(r.w, LayoutMotion, label = "w")
+    val h by animateDpAsState(r.h, LayoutMotion, label = "h")
     return PaneRect(x, y, w, h)
 }
 
@@ -231,7 +237,8 @@ private fun Screens() {
     val stack by AweNav.backStack.collectAsState()
     AnimatedContent(
         targetState = stack.last(),
-        transitionSpec = { fadeIn() togetherWith fadeOut() },
+        // Android Auto の映像は 30fps 前後なので、長い切り替えはもたついて見える
+        transitionSpec = { fadeIn(tween(120)) togetherWith fadeOut(tween(90)) },
         label = "route",
     ) { route ->
         when (route) {

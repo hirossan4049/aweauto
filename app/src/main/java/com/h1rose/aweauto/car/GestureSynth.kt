@@ -148,8 +148,11 @@ class GestureSynth(private val clock: () -> Long) {
         px >= pane.left + EDGE && px <= pane.right - EDGE && py >= pane.top + EDGE && py <= pane.bottom - EDGE
 
     companion object {
-        /** タップの押してから離すまで */
-        const val TAP_MS = 60L
+        /**
+         * タップの押してから離すまで (1 フレーム)。ボタンは離したときに反応するので短いほど速い。
+         * 押す・離すを同じ瞬間に送ると WebView のページがタップとして受け取らないことがあるので 0 にはしない
+         */
+        const val TAP_MS = 16L
 
         /** この間スクロールが来なければ指を離したとみなす */
         const val IDLE_MS = 250L

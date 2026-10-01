@@ -42,6 +42,7 @@ Shizuku
   touch scroll <dx> <dy> [count] [vy]
                      指を dx,dy ずつ count 回 (16ms ごと) 動かす。vy を付けると最後にその速さでフリング
                      dy が正なら指は上へ (コンテンツは下へスクロール)
+  sample [秒]        メインスレッドが何をしているかを数える (debug ビルドのみ)
 
 開発用
   e2e-map            ネイティブ地図枠の実機 E2E (再起動・サイズ変更・残プロセス確認)
@@ -152,7 +153,7 @@ cmd_devtools() {
 
 cmd_touch() {
   need_device
-  local a=(adb shell am broadcast -a com.h1rose.aweauto.debug.TOUCH -p "$PKG")
+  local a=(adb shell am broadcast -a com.h1rose.aweauto.debug.TOUCH -n "$PKG/.debug.TouchDebugReceiver")
   case "${1:-}" in
     tap) "${a[@]}" --es cmd tap --ef x "${2:?x}" --ef y "${3:?y}" >/dev/null ;;
     scroll)
@@ -161,6 +162,16 @@ cmd_touch() {
       "${a[@]}" --es cmd scroll --ef dx "${2:?dx}" --ef dy "${3:?dy}" --ei count "${4:-20}" --ei interval 16 ${extra[@]+"${extra[@]}"} >/dev/null ;;
     *) die "使い方: scripts/aw.sh touch tap <x> <y> | touch scroll <dx> <dy> [count] [vy]" ;;
   esac
+}
+
+# メインスレッドが何をしているかを数秒数える (debug ビルドのみ)
+cmd_sample() {
+  need_device
+  local sec="${1:-5}"
+  adb logcat -c
+  adb shell am broadcast -a com.h1rose.aweauto.debug.TOUCH -n "$PKG/.debug.TouchDebugReceiver" --es cmd sample --ei seconds "$sec" >/dev/null
+  sleep $((sec + 1))
+  adb logcat -d -s AweSample:I | sed 's/.*AweSample: //'
 }
 
 cmd_mute() {
@@ -205,6 +216,7 @@ main() {
     resizable) cmd_resizable "$@" ;;
     mute) cmd_mute "$@" ;;
     touch) cmd_touch "$@" ;;
+    sample) cmd_sample "$@" ;;
     help | -h | --help) usage ;;
     *) echo "不明なコマンド: $cmd" >&2; usage; exit 1 ;;
   esac

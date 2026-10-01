@@ -18,6 +18,10 @@ import com.h1rose.aweauto.car.CarDisplayHost
  */
 class TouchDebugReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
+        if (intent.getStringExtra("cmd") == "sample") {
+            sampleMainThread(intent.getIntExtra("seconds", 5))
+            return
+        }
         val touch = CarDisplayHost.touch
         if (touch == null) {
             Log.w(TAG, "car screen is not shown")
@@ -41,6 +45,30 @@ class TouchDebugReceiver : BroadcastReceiver() {
             }
             else -> Log.w(TAG, "unknown cmd ${intent.getStringExtra("cmd")}")
         }
+    }
+
+    /**
+     * メインスレッドが何をしているかを、5ms ごとにスタックを見て数える (端末にプロファイラが無いため)。
+     * 結果は logcat の AweSample に出る。scripts/aw.sh sample [秒]
+     */
+    private fun sampleMainThread(seconds: Int) {
+        val main = Looper.getMainLooper().thread
+        Thread {
+            val counts = HashMap<String, Int>()
+            var total = 0
+            var idle = 0
+            val end = android.os.SystemClock.uptimeMillis() + seconds * 1000L
+            while (android.os.SystemClock.uptimeMillis() < end) {
+                val stack = main.stackTrace
+                total++
+                // 待ちの状態 (MessageQueue.nativePollOnce) は数えない
+                if (stack.firstOrNull()?.methodName == "nativePollOnce") idle++
+                else stack.take(25).map { "${it.className}.${it.methodName}" }.distinct().forEach { counts[it] = (counts[it] ?: 0) + 1 }
+                Thread.sleep(5)
+            }
+            Log.i("AweSample", "samples=$total busy=${total - idle} (${100 * (total - idle) / maxOf(total, 1)}%)")
+            counts.entries.sortedByDescending { it.value }.take(40).forEach { Log.i("AweSample", "${it.value} ${it.key}") }
+        }.start()
     }
 
     private companion object {

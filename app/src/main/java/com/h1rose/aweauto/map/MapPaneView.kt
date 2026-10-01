@@ -139,7 +139,7 @@ private class ProviderTextureView(
     }
 }
 
-private const val ATTACH_SETTLE_MS = 300L
+private const val ATTACH_SETTLE_MS = 150L
 
 /**
  * 地図アプリに見せる画面の最小サイズ (dp)。横長の枠は 400x320、縦長の枠はスマホの縦画面くらいの 360x480。

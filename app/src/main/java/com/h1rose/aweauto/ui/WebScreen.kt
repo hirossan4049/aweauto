@@ -4,7 +4,6 @@ import android.content.MutableContextWrapper
 import android.view.ViewGroup
 import android.webkit.WebView
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInHorizontally
@@ -101,7 +100,9 @@ fun WebScreen(route: Route.Web) {
             railPeek = false
         }
     }
-    val railWidth by animateDpAsState(if (immersive) 0.dp else RailWidth, label = "railWidth")
+    // WebView の幅は動かさずに一度で変える (幅を少しずつ変えると、そのたびにページ全体の配置し直しと
+    // 動画の大きさの変更が走って重い)。レール自体は横から滑り込ませる
+    val railWidth = if (immersive) 0.dp else RailWidth
 
     Box(Modifier.fillMaxSize().background(Color.Black)) {
         key(session) {
