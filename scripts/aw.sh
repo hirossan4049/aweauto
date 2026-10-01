@@ -34,7 +34,7 @@ Shizuku
   readme-shots       README 用スクリーンショットを DHU から半自動撮影
 
 操作
-  send <url>         YouTube / TVer の URL を車の画面で開く (共有と同じ)
+  send <url>         配信サイトの URL を車の画面で開く (共有と同じ)
   devtools           WebView の DevTools を localhost:9333 に転送 (chrome://inspect でも可)
 
 開発用

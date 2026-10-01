@@ -4,7 +4,7 @@
 
 # aweauto
 
-**Android Auto で YouTube と TVer を。Google TV 風の画面で。**<br>
+**Android Auto で、いろんな配信サイトを。Google TV 風の画面で。**<br>
 動画の横には本物の地図アプリ。その道案内は車の HUD にも出ます。
 
 root 不要 · Android Auto は改造しない · アプリを1つ入れるだけ
@@ -14,13 +14,13 @@ root 不要 · Android Auto は改造しない · アプリを1つ入れるだ�
 [![Jetpack Compose](https://img.shields.io/badge/Jetpack%20Compose-M3-4285F4?style=flat-square&logo=jetpackcompose&logoColor=white)](app)
 [![Car App Library](https://img.shields.io/badge/Car%20App%20Library-1.4-1A73E8?style=flat-square&logo=androidauto&logoColor=white)](https://developer.android.com/training/cars/apps)
 
-[特長](#特長) · [スクリーンショット](#スクリーンショット) · [インストール](#インストール) · [しくみ](#しくみ) · [開発](#開発)
+[特長](#特長) · [対応サイト](#対応サイト) · [スクリーンショット](#スクリーンショット) · [インストール](#インストール) · [しくみ](#しくみ) · [開発](#開発)
 
 [English](README.md) · 日本語
 
 <br>
 
-<img src="docs/hero.png" alt="Android Auto の画面で、YouTube の動画の横に Google マップを出している様子">
+<img src="docs/hero.png" alt="Android Auto の画面で、動画の横に Google マップを出している様子">
 
 </div>
 
@@ -33,19 +33,19 @@ root 不要 · Android Auto は改造しない · アプリを1つ入れるだ�
 <tr>
 <td width="33%" valign="top">
 
-### 📺 Google TV 風のホーム
+### Google TV 風のホーム
 大きなバナー、横スクロールの棚、再生履歴、時計。車の画面でタッチしやすい大きさにしています。
 
 </td>
 <td width="33%" valign="top">
 
-### ▶️ YouTube と TVer を車向けに
-ダークテーマ、3列のグリッド、画面いっぱいのプレーヤー、ミュートの自動解除。ショートやアプリへの誘導は消します。
+### どのサイトも車向けに
+サイトごとに CSS / JS を差し込んで、ダークテーマ・大きなグリッド・画面いっぱいのプレーヤーにします。YouTube と TVer は最初から入っています。
 
 </td>
 <td width="33%" valign="top">
 
-### 📲 スマホからキャスト
+### スマホからキャスト
 公式 YouTube アプリのキャストボタンから送れます。どのアプリからでも「共有 → 車の画面」で送れます。
 
 </td>
@@ -53,19 +53,19 @@ root 不要 · Android Auto は改造しない · アプリを1つ入れるだ�
 <tr>
 <td valign="top">
 
-### 🗺️ 動画の横に地図アプリ
+### 動画の横に地図アプリ
 本物の Google マップや Y!マップを動画の横に出して、そのまま操作できます。幅の変更・左右の入れ替え・小窓にも対応しています。
 
 </td>
 <td valign="top">
 
-### 🧭 道案内を HUD に
+### 道案内を HUD に
 ナビ中の地図アプリの案内を、車のヘッドアップディスプレイやメーターに送ります。
 
 </td>
 <td valign="top">
 
-### 📶 圏外に強い
+### 圏外に強い
 TVer は見ている番組を裏で端末に保存するので、トンネルでも止まりません。通信が遅いときは画質の上限も決められます。
 
 </td>
@@ -73,19 +73,19 @@ TVer は見ている番組を裏で端末に保存するので、トンネルで
 <tr>
 <td valign="top">
 
-### 🛡️ 広告ブロック
+### 広告ブロック
 AdGuard DNS・EasyList・AdGuard 日本語フィルタのルールで止めます。YouTube の動画広告も消します。
 
 </td>
 <td valign="top">
 
-### 🕶️ 再生中は動画だけ
+### 再生中は動画だけ
 再生中は横の操作レールを隠します。再生が始まるまでは、灰色の枠の代わりにサムネイルを出します。
 
 </td>
 <td valign="top">
 
-### 🔁 中断しても続きから
+### 中断しても続きから
 バックカメラや画面の切り替えのあとも、動画と地図はそのまま続きます。つないだときに止まった Shizuku も、自動で起動し直します。
 
 </td>
@@ -95,17 +95,14 @@ AdGuard DNS・EasyList・AdGuard 日本語フィルタのルールで止めま�
 <details>
 <summary><b>くわしく</b></summary>
 
-- **サイトごとの調整**：サイトごとに CSS / JS を差し込んで、次のように変えます。サイトごとに設定で OFF にできます。
-  - ダークテーマ、3列の検索グリッド、画面いっぱいのプレーヤー、ミュートの自動解除
-  - TVer の再生前アンケートに自動で回答
-  - ショート・アプリへの誘導バナー・下のタブバーを非表示
+- **サイトごとの調整**：サイトごとに設定で OFF にできます。何を変えるかは[対応サイト](#対応サイト)を見てください。
 - **キャスト**
   - 同じ Wi-Fi・テザリングにいれば、YouTube のキャストメニューに **aweauto (車)** が自動で出ます（DIAL）。
   - それ以外は、最初に一度だけ「テレビコードでリンク」（Lounge プロトコル）でつなぎます。モバイル回線でも使えます。コードと QR は車の画面に出ます。
   - 共有メニューの一番上の列（ダイレクトシェア）にも「車の画面」を出します。
 - **広告ブロック**：フィルタリストは1日1回更新します。YouTube の動画広告は、プレーヤーに渡る応答から取り除きます。
 - **TVer の保存**：見ている番組の HLS のセグメントを全部、2 GB のディスクキャッシュに保存して、そこからプレーヤーに渡します。
-- **画質の上限**：自動・720p・480p・360p から選べて、両サイトに効きます。YouTube の先読みを長くする設定もありますが、実験的な機能です。
+- **画質の上限**：自動・720p・480p・360p から選べて、YouTube と TVer に効きます。YouTube の先読みを長くする設定もありますが、実験的な機能です。
 - **地図枠**（[Shizuku](https://shizuku.rikka.app/) が必要）
   - ホーム画面から起動できる地図・カーナビアプリを自動で探して、選択肢に出します。
   - Waze は出しません。Android Auto につないでいる間、自分の画面を塞いでしまうためです。
@@ -116,6 +113,17 @@ AdGuard DNS・EasyList・AdGuard 日本語フィルタのルールで止めま�
   - どこまで表示されるかは車によります。通知へのアクセスの許可が必要です。
 
 </details>
+
+## 対応サイト
+
+aweauto は特定のサービス専用ではありません。サイトの追加は、[`StreamService`](app/src/main/java/com/h1rose/aweauto/data/StreamService.kt) に1つ書いて CSS を置くだけです。ほかは必要なときだけ足します。今は次のサイトが入っています。
+
+| サイト | 車向けに変えるところ | そのほか |
+|---|---|---|
+| **YouTube** | ダークテーマ、3列の検索グリッド、画面いっぱいのプレーヤー、ミュートの自動解除。ショート・アプリへの誘導・下のタブバーを隠す | YouTube アプリからのキャスト、動画広告の除去、画質の上限 |
+| **TVer** | ダークテーマ、画面いっぱいのプレーヤー。再生前のアンケートに自動で回答し、アプリへの誘導とフッターを隠す | 見ている番組を端末に保存、画質の上限 |
+
+ほかのサイトを足したいときは[サイトを追加する](#サイトを追加する)を見てください。
 
 ## スクリーンショット
 
@@ -162,9 +170,9 @@ scripts/aw.sh deploy
 
 | 使いたい機能 | 最初に一度だけやること |
 |---|---|
-| 🗺️ 地図枠 | [Shizuku](https://shizuku.rikka.app/) を入れて、`scripts/aw.sh shizuku` で起動します。続けて `scripts/aw.sh tcpip` をしておくと、車の中で止まっても aweauto が起動し直します。 |
-| 🧭 HUD の道案内 | aweauto の設定 →「通知へのアクセス」→ aweauto を許可 |
-| 📲 Wi-Fi 以外でのキャスト | 車の画面のホームでキャストのアイコンを押します。YouTube アプリの「マイページ → 設定 → テレビで見る → テレビコードでリンク」で、表示されたコードを入力します。 |
+| 地図枠 | [Shizuku](https://shizuku.rikka.app/) を入れて、`scripts/aw.sh shizuku` で起動します。続けて `scripts/aw.sh tcpip` をしておくと、車の中で止まっても aweauto が起動し直します。 |
+| HUD の道案内 | aweauto の設定 →「通知へのアクセス」→ aweauto を許可 |
+| Wi-Fi 以外でのキャスト | 車の画面のホームでキャストのアイコンを押します。YouTube アプリの「マイページ → 設定 → テレビで見る → テレビコードでリンク」で、表示されたコードを入力します。 |
 
 ## しくみ
 
@@ -173,7 +181,7 @@ flowchart LR
     subgraph スマホ
         CAS[CarAppService<br/>NAVIGATION カテゴリ] -- Surface --> VD[VirtualDisplay]
         VD --> UI[Compose の画面]
-        UI --> WV[WebView<br/>YouTube / TVer]
+        UI --> WV[WebView<br/>配信サイト]
         WV -. 差し込み .-> JS[CSS / JS<br/>広告ブロック · 画質]
         UI --> MP[地図枠]
         MP -- Surface --> SH[Shizuku の UserService<br/>VirtualDisplay + 入力]
@@ -204,13 +212,21 @@ flowchart LR
 |---|---|
 | `scripts/aw.sh deploy` | ビルドしてインストール |
 | `scripts/aw.sh dhu` | 車なしで試すための [Desktop Head Unit](https://developer.android.com/training/cars/testing/dhu) を起動 |
-| `scripts/aw.sh send <url>` | YouTube / TVer の URL を車の画面で開く |
+| `scripts/aw.sh send <url>` | サイトの URL を車の画面で開く |
 | `scripts/aw.sh logs` | aweauto のログを流す |
 | `scripts/aw.sh devtools` | WebView を Chrome DevTools で調べる |
 | `scripts/aw.sh mute on` | デバッグ中は動画をミュートにする |
 | `scripts/aw.sh e2e-map --apps all` | 地図枠の実機 E2E |
 | `scripts/aw.sh readme-shots` | README のスクリーンショットを DHU で撮り直す |
 | `./gradlew :app:testDebugUnitTest` | 単体テスト |
+
+### サイトを追加する
+
+1. [`StreamService`](app/src/main/java/com/h1rose/aweauto/data/StreamService.kt) に、ホームの URL・ホスト名・ブランドの色・ユーザーエージェントを書いて1つ足します。これでホームと設定に出て、そのサイトのリンクを「共有 → 車の画面」で送れるようになります。
+2. `app/src/main/assets/css/<id>.css` に CSS を置きます。作業の中心はここで、車の画面に合わないものを隠し、プレーヤーを画面いっぱいにします。
+3. 必要なら、動きを変える `app/src/main/assets/js/<id>.js`（ページの読み込み開始時に差し込まれます）と、[`BrandIcon.kt`](app/src/main/java/com/h1rose/aweauto/ui/BrandIcon.kt) のマークを足します。マークがなければ、ブランドの色にサイト名の頭文字を出します。
+
+CSS を書くときは、`scripts/aw.sh devtools` で Chrome から実際のページを調べられます。
 
 <details>
 <summary><b>DHU・E2E・スクリーンショットについて</b></summary>
@@ -224,21 +240,21 @@ flowchart LR
 - **スクリーンショット**：起動中の DHU を閉じてから `scripts/aw.sh readme-shots` を実行します。一部だけ撮り直すときは `--only home,settings` を付けます。
   - 1280×720 の DHU が起動するので、案内された画面を開いて Enter を押します。
   - 地図の画像では、地図に東京を出すので、自宅やアカウントは写りません。
-  - 撮ったあとに `python3 scripts/readme-hero.py` を実行すると、`docs/hero.png` を作り直せます（Pillow が必要）。
+  - 撮ったあとに `python3 scripts/readme-images.py` を実行すると、`docs/hero.png` と GitHub の Social preview 用の `docs/social-preview.png` を作り直せます（Pillow が必要）。Social preview は、リポジトリの「Settings → General → Social preview」からアップロードします。
 
 </details>
 
 ## 制限
 
 - **Android Auto 自身の表示は消せない**：下のシステムバーや、重なって出る小さな戻るボタンは、アプリからは隠せません。
-- **サイトの変更で動かなくなることがある**：調整は、YouTube / TVer のページ構造やプレーヤーの内部に依存しています。
+- **サイトの変更で動かなくなることがある**：調整は、各サイトのページ構造やプレーヤーの内部に依存しています。
 - **YouTube は丸ごとの先読みができない**：Web プレーヤーが SABR という方式で動画を取りに行きます。その POST の要求は、WebView 側からは予測することも代わりに返すこともできません。先読みは約2分が上限です。
 - **TVer は日本国内からのみ**：日本の IP アドレスが必要です。
 - **HUD に出るかは車しだい**：純正ナビ以外の案内を HUD に出さない車もあります。
 
 ## 免責
 
-aweauto は非公式の個人プロジェクトで、Google・YouTube・TVer とは関係ありません。公開されていない API を使い、他社のページを書き換えるので、各サービスの利用規約に反するおそれがあります。自己責任で使ってください。
+aweauto は非公式の個人プロジェクトで、Google や、開ける配信サービスのどれとも関係ありません。公開されていない API を使い、他社のページを書き換えるので、各サービスの利用規約に反するおそれがあります。自己責任で使ってください。
 
 ## 謝辞
 
