@@ -222,7 +222,7 @@ flowchart LR
 
 ### サイトを追加する
 
-1. [`StreamService`](app/src/main/java/com/h1rose/aweauto/data/StreamService.kt) に、ホームの URL・ホスト名・ブランドの色・ユーザーエージェントを書いて1つ足します。これでホームと設定に出て、そのサイトのリンクを「共有 → 車の画面」で送れるようになります。
+1. [`StreamService`](app/src/main/java/com/h1rose/aweauto/data/StreamService.kt) に、ホームの URL・ホスト名・ブランドの色・ユーザーエージェントを書いて1つ足します。これでホームと設定に出て、そのサイトのリンクを「共有 → 車の画面」で送れるようになります。共通の機能は項目を書くだけで使えます。HLS の番組を見ながら保存するなら `offlineCache`、ダークテーマなどの設定を Cookie で持つサイトなら `optimizeCookies` です。
 2. `app/src/main/assets/css/<id>.css` に CSS を置きます。作業の中心はここで、車の画面に合わないものを隠し、プレーヤーを画面いっぱいにします。
 3. 必要なら、動きを変える `app/src/main/assets/js/<id>.js`（ページの読み込み開始時に差し込まれます）と、[`BrandIcon.kt`](app/src/main/java/com/h1rose/aweauto/ui/BrandIcon.kt) のマークを足します。マークがなければ、ブランドの色にサイト名の頭文字を出します。
 

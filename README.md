@@ -222,7 +222,7 @@ flowchart LR
 
 ### Adding a site
 
-1. Add an entry to [`StreamService`](app/src/main/java/com/h1rose/aweauto/data/StreamService.kt) with its home URL, hosts, brand color and user agent. It then shows up on the home screen and in Settings, and links to it can be shared to the car screen.
+1. Add an entry to [`StreamService`](app/src/main/java/com/h1rose/aweauto/data/StreamService.kt) with its home URL, hosts, brand color and user agent. It then shows up on the home screen and in Settings, and links to it can be shared to the car screen. Optional switches turn on shared features: `offlineCache` for HLS sites that should be saved while you watch, and `optimizeCookies` for sites that keep settings such as a dark theme in cookies.
 2. Put a stylesheet at `app/src/main/assets/css/<id>.css`. Most of the work is here: hide what doesn't fit a car screen and make the player fill it.
 3. Optionally add `app/src/main/assets/js/<id>.js` for behavior (it's injected at document start), and a mark in [`BrandIcon.kt`](app/src/main/java/com/h1rose/aweauto/ui/BrandIcon.kt). Without a mark, the site's initial on its brand color is used.
 

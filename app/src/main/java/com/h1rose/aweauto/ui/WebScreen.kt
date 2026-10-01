@@ -157,11 +157,11 @@ fun WebScreen(route: Route.Web) {
     val adblock by Prefs.adblock.collectAsState()
     val maxHeight by Prefs.maxHeight.collectAsState()
     val prefetch by Prefs.prefetch.collectAsState()
-    val tverOffline by Prefs.tverOffline.collectAsState()
+    val offlineCache by Prefs.offlineCache.collectAsState()
     val devMute by Prefs.devMute.collectAsState()
     val playback = PlaybackConfig(maxHeight = maxHeight, readaheadSec = if (prefetch) READAHEAD_SEC else 0)
     // 設定を切り替えたら WebView ごと作り直す (注入済みスクリプトを外す API が無いため)
-    val key = listOf(optimized, adblock, playback, tverOffline, devMute)
+    val key = listOf(optimized, adblock, playback, offlineCache, devMute)
     val context = LocalContext.current
     val session = remember(route, key) {
         sessions[route]?.takeIf { it.key == key } ?: run {
@@ -174,7 +174,7 @@ fun WebScreen(route: Route.Web) {
                 optimized,
                 adblock,
                 playback,
-                tverOffline,
+                offlineCache,
                 devMute,
                 onFullscreen = { created.fullscreen = it },
                 onUrl = { created.currentUrl = it },
@@ -291,7 +291,7 @@ private fun createWebView(
     optimized: Boolean,
     adblock: Boolean,
     playback: PlaybackConfig,
-    tverOffline: Boolean,
+    offlineCache: Boolean,
     mute: Boolean,
     onFullscreen: (Pair<View, WebChromeClient.CustomViewCallback>?) -> Unit,
     onUrl: (String) -> Unit,
@@ -300,12 +300,9 @@ private fun createWebView(
 ): WebView {
     val service = route.service
     val tweaks = SiteTweaks(ctx, service, optimize = optimized, adblock = adblock, playback = playback, mute = mute)
-    val hls = if (service == StreamService.TVER && tverOffline) HlsPrefetcher(ctx, playback.maxHeight) else null
+    val hls = if (service.offlineCache && offlineCache) HlsPrefetcher(ctx, playback.maxHeight) else null
     val cookies = CookieManager.getInstance()
-    if (optimized && service == StreamService.YOUTUBE) {
-        // f6=400: ダークテーマ
-        cookies.setCookie("https://m.youtube.com", "PREF=f6=400&hl=ja; domain=.youtube.com; path=/")
-    }
+    if (optimized) service.optimizeCookies.forEach { (url, value) -> cookies.setCookie(url, value) }
 
     return WebView(ctx).apply {
         layoutParams = ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT)
@@ -321,7 +318,7 @@ private fun createWebView(
         }
         tweaks.install(this)
         setTag(R.id.hls_prefetcher, hls)
-        if (service == StreamService.YOUTUBE) CastBridge.attach(this)
+        if (service.castReceiver) CastBridge.attach(this)
         addJavascriptInterface(
             object {
                 @JavascriptInterface

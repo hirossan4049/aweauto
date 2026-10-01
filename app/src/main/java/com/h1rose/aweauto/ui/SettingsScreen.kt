@@ -75,7 +75,7 @@ fun SettingsScreen(onBack: (() -> Unit)?) {
     val adStatus by AdBlocker.status.collectAsState()
     val maxHeight by Prefs.maxHeight.collectAsState()
     val prefetch by Prefs.prefetch.collectAsState()
-    val tverOffline by Prefs.tverOffline.collectAsState()
+    val offlineCache by Prefs.offlineCache.collectAsState()
     val mapApp by Prefs.mapApp.collectAsState()
     val hlsUsage by HlsCacheStore.usage.collectAsState()
     val hlsProgress by HlsCacheStore.progressFlow.collectAsState()
@@ -141,11 +141,11 @@ fun SettingsScreen(onBack: (() -> Unit)?) {
                 SettingRow(
                     title = "TVer を裏で丸ごと先読みする",
                     description = "再生を始めた番組を最後まで端末に保存しながら再生します。保存済みの部分はトンネルや圏外でも止まりません",
-                    checked = tverOffline,
-                    onChange = { Prefs.setTverOffline(it) },
+                    checked = offlineCache,
+                    onChange = { Prefs.setOfflineCache(it) },
                 )
             }
-            if (tverOffline) {
+            if (offlineCache) {
                 item {
                     val progressText = hlsProgress["video"]?.let { " ・ 再生中の番組 $it%" }.orEmpty()
                     ActionRow(

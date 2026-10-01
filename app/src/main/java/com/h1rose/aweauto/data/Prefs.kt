@@ -49,8 +49,8 @@ object Prefs {
     val shizukuAutoRestart: StateFlow<Boolean> = _shizukuAutoRestart.asStateFlow()
     private val _cast = MutableStateFlow(true)
     val cast: StateFlow<Boolean> = _cast.asStateFlow()
-    private val _tverOffline = MutableStateFlow(true)
-    val tverOffline: StateFlow<Boolean> = _tverOffline.asStateFlow()
+    private val _offlineCache = MutableStateFlow(true)
+    val offlineCache: StateFlow<Boolean> = _offlineCache.asStateFlow()
     private val _prefetch = MutableStateFlow(false)
     val prefetch: StateFlow<Boolean> = _prefetch.asStateFlow()
     private val _history = MutableStateFlow<List<HistoryItem>>(emptyList())
@@ -63,7 +63,8 @@ object Prefs {
         _adblock.value = sp.getBoolean("adblock", true)
         _maxHeight.value = sp.getInt("max_height", 480)
         _prefetch.value = sp.getBoolean("prefetch", false)
-        _tverOffline.value = sp.getBoolean("tver_offline", true)
+        // キーは TVer にしか無かったころの名前のまま (前の設定を引き継ぐため)
+        _offlineCache.value = sp.getBoolean("tver_offline", true)
         _cast.value = sp.getBoolean("cast", true)
         _shizukuAutoRestart.value = sp.getBoolean("shizuku_auto_restart", true)
         _devMute.value = com.h1rose.aweauto.BuildConfig.DEBUG && sp.getBoolean("dev_mute", false)
@@ -119,9 +120,9 @@ object Prefs {
         }
     }
 
-    fun setTverOffline(enabled: Boolean) {
+    fun setOfflineCache(enabled: Boolean) {
         sp.edit().putBoolean("tver_offline", enabled).apply()
-        _tverOffline.value = enabled
+        _offlineCache.value = enabled
     }
 
     fun setPrefetch(enabled: Boolean) {
