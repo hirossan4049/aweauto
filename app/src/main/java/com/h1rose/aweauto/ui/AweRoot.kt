@@ -28,6 +28,7 @@ import androidx.compose.material.icons.outlined.SwapHoriz
 import androidx.compose.material.icons.outlined.ViewColumn
 import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberUpdatedState
@@ -78,8 +79,11 @@ fun AweRoot() {
             Box(Modifier.placed(mapAnim).zIndex(if (pipIsMap) 1f else 0f)) {
                 MapPane(Modifier.fillMaxSize(), overlay = pipIsMap)
             }
+            // Android Auto の戻るボタンは画面の右上に重なる。右上に接していない側は空けておく必要がない
+            val touchesTopEnd = screenRect.x + screenRect.w >= maxWidth - 1.dp && screenRect.y < 1.dp
+            val reserve = if (touchesTopEnd) LocalTopEndReserve.current else 0.dp
             Box(Modifier.placed(screenAnim).zIndex(if (layout.mode == MapMode.PIP && layout.mapFirst) 1f else 0f)) {
-                Screens()
+                CompositionLocalProvider(LocalTopEndReserve provides reserve) { Screens() }
             }
 
             when (layout.mode) {
