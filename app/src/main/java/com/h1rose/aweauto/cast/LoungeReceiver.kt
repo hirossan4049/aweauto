@@ -85,14 +85,8 @@ object LoungeReceiver {
     private var aid = -1
     private var ofs = 0
 
-    // ---- 再生状態 (スマホ側のミニプレーヤー表示用) ----
-    private var videoIds = emptyList<String>()
-    private var listId = ""
-    private var currentIndex = 0
-    private var cpn = randomString(16)
-    private var state = State(videoId = "", state = -1, currentTime = 0.0, duration = 0.0)
-
-    private data class State(val videoId: String, val state: Int, val currentTime: Double, val duration: Double)
+    // ---- 再生キューと再生状態 (スマホ側のミニプレーヤー表示用)。何をするかは LoungeSession が決める ----
+    private val session = LoungeSession { randomString(16) }
 
     fun init(context: Context) {
         sp = context.getSharedPreferences("lounge", Context.MODE_PRIVATE)
@@ -266,63 +260,20 @@ object LoungeReceiver {
     private fun handle(msg: LoungeMessage) {
         if (msg.index <= aid && msg.name != "c" && msg.name != "S") return
         aid = maxOf(aid, msg.index)
-        val p = msg.payload
         when (msg.name) {
             "c" -> sid = msg.args.optString(0)
             "S" -> gsessionId = msg.args.optString(0)
             "noop" -> Unit
             "loungeStatus" -> {
-                val devices = runCatching { org.json.JSONArray(p.optString("devices", "[]")) }.getOrNull()
-                val remotes = (0 until (devices?.length() ?: 0))
-                    .map { devices!!.getJSONObject(it) }
-                    .filter { it.optString("type") == "REMOTE_CONTROL" }
-                    .map { it.optString("name").ifEmpty { it.optString("clientName", "YouTube") } }
+                val remotes = LoungeSession.remotesIn(msg.payload)
                 val linked = (_status.value.linked + remotes).distinct().sorted()
                 if (linked != _status.value.linked) sp.edit().putStringSet("linked", linked.toSet()).apply()
                 _status.value = _status.value.copy(remotes = remotes, linked = linked)
-                if (remotes.isNotEmpty()) sendFullState()
+                if (remotes.isNotEmpty()) send(*session.fullState().toTypedArray())
             }
-            "remoteConnected" -> sendFullState()
-            "getNowPlaying" -> send(nowPlaying())
-            "setPlaylist" -> {
-                videoIds = p.optString("videoIds").split(',').filter { it.isNotEmpty() }
-                listId = p.optString("listId")
-                currentIndex = p.optString("currentIndex", "0").toIntOrNull() ?: 0
-                val videoId = p.optString("videoId").ifEmpty { videoIds.getOrNull(currentIndex).orEmpty() }
-                val start = p.optString("currentTime", "0").toDoubleOrNull() ?: 0.0
-                if (videoId.isNotEmpty()) startVideo(videoId, start)
-            }
-            "updatePlaylist" -> {
-                videoIds = p.optString("videoIds").split(',').filter { it.isNotEmpty() }
-                listId = p.optString("listId", listId)
-                send(nowPlaying())
-            }
-            "play" -> onMain { player?.play() }
-            "pause" -> onMain { player?.pause() }
-            "seekTo" -> p.optString("newTime").toDoubleOrNull()?.let { t -> onMain { player?.seekTo(t) } }
-            "stopVideo" -> {
-                onMain { player?.stop() }
-                state = state.copy(videoId = "", state = 4)
-                send(OutgoingMessage("nowPlaying"))
-            }
-            "next" -> videoIds.getOrNull(currentIndex + 1)?.let { currentIndex++; startVideo(it, 0.0) }
-            "previous" -> videoIds.getOrNull(currentIndex - 1)?.let { currentIndex--; startVideo(it, 0.0) }
-            "setVolume" -> p.optString("volume").toIntOrNull()?.let { v ->
-                onMain { player?.setVolume(v) }
-                send(OutgoingMessage("onVolumeChanged", mapOf("volume" to "$v", "muted" to "false")))
-            }
-            "getVolume" -> send(OutgoingMessage("onVolumeChanged", mapOf("volume" to "100", "muted" to "false")))
-            "getSubtitlesTrack" -> send(OutgoingMessage("onSubtitlesTrackChanged", mapOf("videoId" to state.videoId)))
-            else -> Log.d(TAG, "unhandled ${msg.name} $p")
+            else -> session.onMessage(msg.name, msg.payload)?.let(::perform)
+                ?: Log.d(TAG, "unhandled ${msg.name} ${msg.payload}")
         }
-    }
-
-    private fun startVideo(videoId: String, startSec: Double) {
-        cpn = randomString(16)
-        state = State(videoId, state = 3, currentTime = startSec, duration = 0.0)
-        currentIndex = videoIds.indexOf(videoId).takeIf { it >= 0 } ?: currentIndex
-        onMain { player?.load(videoId, startSec) }
-        send(nowPlaying(), stateChange(), hasPrevNext())
     }
 
     // ------------------------------------------------------------------
@@ -332,57 +283,28 @@ object LoungeReceiver {
     /** WebView のプレーヤーから呼ばれる。state: 1 再生中 / 2 一時停止 / 3 読み込み中 / 0 終了 */
     fun reportPlayback(videoId: String, playerState: Int, currentTime: Double, duration: Double) {
         if (sid.isEmpty() || videoId.isEmpty()) return
-        val changedVideo = videoId != state.videoId
-        state = State(videoId, playerState, currentTime, duration)
-        if (changedVideo) cpn = randomString(16)
-        // スマホがつながっていなければ送らない (再生中は数秒ごとに呼ばれるので無駄な通信を減らす)。
-        // つながったときは remoteConnected / loungeStatus で今の状態をまとめて送る
-        if (_status.value.remotes.isNotEmpty()) {
-            if (changedVideo) send(nowPlaying(), stateChange()) else send(stateChange())
+        perform(session.onPlayback(videoId, playerState, currentTime, duration, _status.value.remotes.isNotEmpty()))
+    }
+
+    /** LoungeSession が決めたことを実行する: スマホへ送り、プレーヤーを動かす */
+    private fun perform(effects: LoungeEffects) {
+        if (effects.player.isNotEmpty()) {
+            onMain {
+                val p = player ?: return@onMain
+                effects.player.forEach { cmd ->
+                    when (cmd) {
+                        is PlayerCommand.Load -> p.load(cmd.videoId, cmd.startSec)
+                        PlayerCommand.Play -> p.play()
+                        PlayerCommand.Pause -> p.pause()
+                        is PlayerCommand.SeekTo -> p.seekTo(cmd.sec)
+                        PlayerCommand.Stop -> p.stop()
+                        is PlayerCommand.SetVolume -> p.setVolume(cmd.volume)
+                    }
+                }
+            }
         }
-        // 次の動画への自動再生は、スマホがつながっていなくても続ける
-        if (playerState == 0) videoIds.getOrNull(currentIndex + 1)?.let { currentIndex++; startVideo(it, 0.0) }
+        if (effects.send.isNotEmpty()) send(*effects.send.toTypedArray())
     }
-
-    private fun sendFullState() = send(
-        hasPrevNext(),
-        nowPlaying(),
-        stateChange(),
-        OutgoingMessage("onAutoplayModeChanged", mapOf("autoplayMode" to "UNSUPPORTED")),
-    )
-
-    private fun nowPlaying(): OutgoingMessage {
-        if (state.videoId.isEmpty()) return OutgoingMessage("nowPlaying")
-        return OutgoingMessage(
-            "nowPlaying",
-            buildMap {
-                put("videoId", state.videoId)
-                putAll(timing())
-                put("state", state.state.toString())
-                if (listId.isNotEmpty()) put("listId", listId)
-                put("currentIndex", currentIndex.toString())
-            },
-        )
-    }
-
-    private fun stateChange() = OutgoingMessage("onStateChange", timing() + ("state" to state.state.toString()))
-
-    private fun timing(): Map<String, String> {
-        val loaded = if (state.state in 1..3) state.duration else 0.0
-        return mapOf(
-            "currentTime" to "%.3f".format(state.currentTime),
-            "duration" to "%.3f".format(state.duration),
-            "loadedTime" to "%.3f".format(loaded),
-            "seekableStartTime" to "0",
-            "seekableEndTime" to "%.3f".format(state.duration),
-            "cpn" to cpn,
-        )
-    }
-
-    private fun hasPrevNext() = OutgoingMessage(
-        "onHasPreviousNextChanged",
-        mapOf("hasPrevious" to (currentIndex > 0).toString(), "hasNext" to (currentIndex + 1 < videoIds.size).toString()),
-    )
 
     private fun send(vararg messages: OutgoingMessage) {
         if (sid.isEmpty()) return
