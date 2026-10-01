@@ -1,8 +1,6 @@
 package com.h1rose.aweauto.ui
 
 import androidx.compose.animation.AnimatedContent
-import androidx.compose.animation.core.FastOutSlowInEasing
-import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -32,7 +30,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.pointerInput
@@ -49,9 +46,6 @@ import com.h1rose.aweauto.map.MapPane
 import com.h1rose.aweauto.map.PipCorner
 
 private val DividerWidth = 2.dp
-
-/** 並べ方を変えるときの動き */
-private val LayoutMotion = tween<Dp>(durationMillis = 160, easing = FastOutSlowInEasing)
 private val PipMargin = 16.dp
 
 /** 画面内の位置と大きさ */
@@ -73,17 +67,15 @@ fun AweRoot() {
         BoxWithConstraints(Modifier.fillMaxSize().background(AweColors.Background)) {
             val (mapRect, screenRect) = paneRects(layout, maxWidth, maxHeight)
             val pipIsMap = layout.mode == MapMode.PIP && !layout.mapFirst
-            val mapAnim = animateRect(mapRect)
-            val screenAnim = animateRect(screenRect)
 
             // 小窓の方を手前に (zIndex)。同じ高さのときは後に書いた方が上になる
-            Box(Modifier.placed(mapAnim).zIndex(if (pipIsMap) 1f else 0f)) {
-                MapPane(Modifier.fillMaxSize())
+            Box(Modifier.placed(mapRect).zIndex(if (pipIsMap) 1f else 0f)) {
+                MapPane(Modifier.fillMaxSize(), overlay = layout.mode == MapMode.PIP)
             }
             // Android Auto の戻るボタンは画面の右上に重なる。右上に接していない側は空けておく必要がない
             val touchesTopEnd = screenRect.x + screenRect.w >= maxWidth - 1.dp && screenRect.y < 1.dp
             val reserve = if (touchesTopEnd) LocalTopEndReserve.current else 0.dp
-            Box(Modifier.placed(screenAnim).zIndex(if (layout.mode == MapMode.PIP && layout.mapFirst) 1f else 0f)) {
+            Box(Modifier.placed(screenRect).zIndex(if (layout.mode == MapMode.PIP && layout.mapFirst) 1f else 0f)) {
                 CompositionLocalProvider(LocalTopEndReserve provides reserve) { Screens() }
             }
 
@@ -133,16 +125,6 @@ private fun paneRects(layout: MapLayout, w: Dp, h: Dp): Pair<PaneRect, PaneRect>
     }
 }
 
-@Composable
-private fun animateRect(r: PaneRect): PaneRect {
-    // 地図枠は大きさが変わるたびに描き直しになるので、ばねではなく短い時間で決まった動きにする
-    val x by animateDpAsState(r.x, LayoutMotion, label = "x")
-    val y by animateDpAsState(r.y, LayoutMotion, label = "y")
-    val w by animateDpAsState(r.w, LayoutMotion, label = "w")
-    val h by animateDpAsState(r.h, LayoutMotion, label = "h")
-    return PaneRect(x, y, w, h)
-}
-
 private fun Modifier.placed(r: PaneRect) = this.offset(r.x, r.y).size(r.w, r.h)
 
 /** 左右の境目。つまみのドラッグで幅を変え、タップで 1/3・1/2・2/3 を切り替える。横に入れ替え・PiP ボタン */
@@ -181,7 +163,6 @@ private fun SplitDivider(layout: MapLayout, width: Dp) {
             Box(
                 Modifier
                     .size(width = 8.dp, height = 56.dp)
-                    .shadow(4.dp, CircleShape)
                     .clip(CircleShape)
                     .background(AweColors.Chip)
             )
@@ -223,9 +204,8 @@ private fun ControlButton(icon: ImageVector, label: String, small: Boolean = fal
         Modifier
             .pressScale(onClick)
             .size(size)
-            .shadow(6.dp, CircleShape)
             .clip(CircleShape)
-            .background(AweColors.SurfaceHigh.copy(alpha = 0.92f)),
+            .background(AweColors.SurfaceHigh),
         contentAlignment = Alignment.Center,
     ) {
         Icon(icon, contentDescription = label, tint = AweColors.OnSurface, modifier = Modifier.size(if (small) 18.dp else 22.dp))

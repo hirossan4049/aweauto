@@ -1,9 +1,11 @@
 package com.h1rose.aweauto.map
 
 import android.annotation.SuppressLint
-import android.view.MotionEvent
 import android.graphics.SurfaceTexture
+import android.view.MotionEvent
 import android.view.Surface
+import android.view.SurfaceHolder
+import android.view.SurfaceView
 import android.view.TextureView
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -18,6 +20,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
@@ -33,12 +36,11 @@ import com.h1rose.aweauto.ui.LocalIsCar
 /**
  * 地図枠。登録された [MapPaneProvider] に描画先とタッチを渡す。
  *
- * 描画先には TextureView を使う。SurfaceView は重なり順を変えるたびに作り直しが必要で、
- * そのたびに描画先が壊れて detach → attach が起き、中身 (他アプリの表示) が不安定になるため。
- * TextureView はふつうの View と同じ順で重なり、表示中は大きさが変わっても描画先を保ち続ける。
+ * 通常の左右分割では SurfaceView を使い、SurfaceFlinger が合成しやすい不透明レイヤーにする。
+ * PiP など重なりが必要な場面だけ TextureView を使う。TextureView は安定だが、常時合成の負荷が高い。
  */
 @Composable
-fun MapPane(modifier: Modifier = Modifier) {
+fun MapPane(modifier: Modifier = Modifier, overlay: Boolean = false) {
     val provider by MapPanes.provider.collectAsState()
     Box(modifier.background(AweColors.Surface)) {
         val p = provider
@@ -48,22 +50,33 @@ fun MapPane(modifier: Modifier = Modifier) {
             // スマホのプレビューと車の画面で同じ中身を取り合わないよう、中身は車の画面にだけ出す
             Placeholder(title = stringResource(R.string.map_on_car), detail = p.label)
         } else {
-            AndroidView(
-                modifier = Modifier.fillMaxSize(),
-                factory = { ctx -> ProviderTextureView(ctx, p) },
-                update = { it.provider = p },
-                onRelease = { it.release() },
-            )
+            // 並べ方が変わったら描画先の種類も変える (factory は最初の 1 回しか呼ばれないので、key で作り直す)。
+            // 作り直しても地図側の仮想ディスプレイは使い回すので、地図アプリは止まらない
+            key(overlay) {
+                AndroidView(
+                    modifier = Modifier.fillMaxSize(),
+                    factory = { ctx ->
+                        if (overlay) ProviderTextureView(ctx, p) else ProviderSurfaceView(ctx, p)
+                    },
+                    update = { (it as ProviderMapView).provider = p },
+                    onRelease = { (it as ProviderMapView).release() },
+                )
+            }
         }
     }
+}
+
+private interface ProviderMapView {
+    var provider: MapPaneProvider?
+    fun release()
 }
 
 @SuppressLint("ViewConstructor")
 private class ProviderTextureView(
     context: android.content.Context,
     initial: MapPaneProvider,
-) : TextureView(context), TextureView.SurfaceTextureListener {
-    var provider: MapPaneProvider? = initial
+) : TextureView(context), TextureView.SurfaceTextureListener, ProviderMapView {
+    override var provider: MapPaneProvider? = initial
         set(value) {
             if (field === value) return
             if (attached != null) field?.detach()
@@ -81,7 +94,9 @@ private class ProviderTextureView(
 
     init {
         surfaceTextureListener = this
-        isOpaque = false
+        // 地図アプリの出力は全面不透明。ここを透過扱いにすると SurfaceFlinger が下の
+        // Compose 面と毎フレーム合成しやすくなるので、不透明レイヤーとして扱わせる。
+        isOpaque = true
     }
 
     override fun onSurfaceTextureAvailable(texture: SurfaceTexture, width: Int, height: Int) {
@@ -107,7 +122,7 @@ private class ProviderTextureView(
 
     override fun onSurfaceTextureUpdated(texture: SurfaceTexture) = Unit
 
-    fun release() {
+    override fun release() {
         removeCallbacks(attachNow)
         if (attached != null) provider?.detach()
         attached = null
@@ -125,6 +140,74 @@ private class ProviderTextureView(
     private fun attachIfReady() {
         val p = provider ?: return
         val s = surface?.takeIf { it.isValid } ?: return
+        val (w, h) = surfaceSize
+        if (w < MIN_SIZE_PX || h < MIN_SIZE_PX) return
+        if (attached == surfaceSize) return
+        attached = surfaceSize
+        p.attach(s, w, h, mapDensityDpi(w, h, resources.displayMetrics.densityDpi))
+    }
+
+    @SuppressLint("ClickableViewAccessibility")
+    override fun onTouchEvent(event: MotionEvent): Boolean {
+        provider?.onTouch(event.actionMasked, event.x, event.y, event.downTime, event.eventTime) ?: return false
+        return true
+    }
+}
+
+@SuppressLint("ViewConstructor")
+private class ProviderSurfaceView(
+    context: android.content.Context,
+    initial: MapPaneProvider,
+) : SurfaceView(context), SurfaceHolder.Callback, ProviderMapView {
+    override var provider: MapPaneProvider? = initial
+        set(value) {
+            if (field === value) return
+            if (attached != null) field?.detach()
+            field = value
+            attached = null
+            scheduleAttach()
+        }
+
+    /** 最後に attach した大きさ。同じなら呼び直さない */
+    private var attached: Pair<Int, Int>? = null
+    private var surfaceSize = 0 to 0
+    private val attachNow = Runnable { attachIfReady() }
+
+    init {
+        holder.addCallback(this)
+        setZOrderOnTop(false)
+    }
+
+    override fun surfaceCreated(holder: SurfaceHolder) {
+        surfaceSize = width to height
+        scheduleAttach()
+    }
+
+    override fun surfaceChanged(holder: SurfaceHolder, format: Int, width: Int, height: Int) {
+        surfaceSize = width to height
+        scheduleAttach()
+    }
+
+    override fun surfaceDestroyed(holder: SurfaceHolder) {
+        removeCallbacks(attachNow)
+        if (attached != null) provider?.detach()
+        attached = null
+    }
+
+    override fun release() {
+        removeCallbacks(attachNow)
+        if (attached != null) provider?.detach()
+        attached = null
+    }
+
+    private fun scheduleAttach() {
+        removeCallbacks(attachNow)
+        postDelayed(attachNow, ATTACH_SETTLE_MS)
+    }
+
+    private fun attachIfReady() {
+        val p = provider ?: return
+        val s = holder.surface?.takeIf { it.isValid } ?: return
         val (w, h) = surfaceSize
         if (w < MIN_SIZE_PX || h < MIN_SIZE_PX) return
         if (attached == surfaceSize) return
