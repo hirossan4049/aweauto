@@ -31,8 +31,8 @@ class TouchInjector(private val target: () -> View?) {
     /** distance は GestureDetector と同じく「前回位置 - 今回位置」 */
     fun scroll(distanceX: Float, distanceY: Float) {
         val root = target() ?: return
-        val area = if (synth.isDragging) null else paneAt(root, synth.anchor())
-        dispatch(synth.scroll(distanceX, distanceY, area ?: Box(0f, 0f, 0f, 0f)))
+        val pane = if (synth.isDragging) null else paneAt(root, synth.anchor())
+        dispatch(synth.scroll(distanceX, distanceY, pane?.first ?: Box(0f, 0f, 0f, 0f), wholeScreen = pane?.second ?: false))
         handler.removeCallbacks(release)
         handler.postDelayed(release, GestureSynth.IDLE_MS)
     }
@@ -40,8 +40,22 @@ class TouchInjector(private val target: () -> View?) {
     /** velocity は指の動く向き (px/秒) */
     fun fling(velocityX: Float, velocityY: Float) {
         handler.removeCallbacks(release)
-        dispatch(synth.fling(velocityX, velocityY))
+        val events = synth.fling(velocityX, velocityY)
+        if (events.isEmpty()) return
+        // 速さの計算には各イベントの時刻の間隔が使われるので、組み立てた時刻どおりに実際に間を空けて送る
+        // (持ち直しはすぐ、動きは 1 フレームずつ、離すのは最後の動きと同じ時刻)
+        val base = events.first().eventTime
+        val shift = SystemClock.uptimeMillis() - base
+        events.forEach { e ->
+            // 持ち直す前の指 (base より前に押した指) の押した時刻はそのまま
+            val shifted = e.copy(
+                downTime = if (e.downTime >= base) e.downTime + shift else e.downTime,
+                eventTime = e.eventTime + shift,
+            )
+            handler.postDelayed({ dispatch(listOf(shifted)) }, e.eventTime - base)
+        }
     }
+
 
     private fun dispatch(events: List<TouchEvent>) {
         val view = target() ?: return
@@ -72,12 +86,12 @@ class TouchInjector(private val target: () -> View?) {
 
         /**
          * ドラッグを始める位置を含む区画。Web 画面 (WebView) や地図枠 (TextureView) の中ならその範囲、
-         * それ以外 (ホームや設定などの Compose の画面) なら画面全体。端に着いたらこの中で持ち直す
+         * それ以外 (ホームや設定などの Compose の画面) なら画面全体 (true を返す)。端に着いたらこの中で持ち直す
          */
-        internal fun paneAt(root: View, point: Pair<Float, Float>?): Box {
-            val whole = Box(0f, 0f, root.width.toFloat(), root.height.toFloat())
+        internal fun paneAt(root: View, point: Pair<Float, Float>?): Pair<Box, Boolean> {
+            val whole = Box(0f, 0f, root.width.toFloat(), root.height.toFloat()) to true
             val (px, py) = point ?: return whole
-            return findPane(root, px, py) ?: whole
+            return findPane(root, px, py)?.let { it to false } ?: whole
         }
 
         private fun findPane(view: View, px: Float, py: Float): Box? {

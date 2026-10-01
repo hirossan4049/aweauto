@@ -158,7 +158,7 @@ cmd_touch() {
     scroll)
       local extra=()
       [ -n "${5:-}" ] && extra=(--ef vy "$5")
-      "${a[@]}" --es cmd scroll --ef dx "${2:?dx}" --ef dy "${3:?dy}" --ei count "${4:-20}" --ei interval 16 "${extra[@]}" >/dev/null ;;
+      "${a[@]}" --es cmd scroll --ef dx "${2:?dx}" --ef dy "${3:?dy}" --ei count "${4:-20}" --ei interval 16 ${extra[@]+"${extra[@]}"} >/dev/null ;;
     *) die "使い方: scripts/aw.sh touch tap <x> <y> | touch scroll <dx> <dy> [count] [vy]" ;;
   esac
 }

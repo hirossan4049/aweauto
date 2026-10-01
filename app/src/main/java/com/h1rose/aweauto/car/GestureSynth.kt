@@ -1,5 +1,7 @@
 package com.h1rose.aweauto.car
 
+import kotlin.math.abs
+
 /** 組み立てたタッチの 1 イベント。時刻は SystemClock.uptimeMillis と同じ基準 */
 data class TouchEvent(val action: Action, val x: Float, val y: Float, val downTime: Long, val eventTime: Long) {
     enum class Action { DOWN, MOVE, UP }
@@ -16,8 +18,9 @@ data class Box(val left: Float, val top: Float, val right: Float, val bottom: Fl
  * Android Auto の「タップ位置」「スクロール量」「フリングの速さ」から、指 1 本のタッチの流れを組み立てる。
  *
  * Android Auto はスクロールの開始位置を教えてくれないので、最後にタップした位置からドラッグを始める
- * (タップした区画・行・棚がそのままスクロールする)。指が区画の端に着いたら、区画の中央で持ち直して続ける
- * (そうしないと、上の方をタップした直後は少ししかスクロールできない)。
+ * (タップした区画・行・棚がそのままスクロールする)。ただしホームや設定 (Compose の画面) の縦スクロールは、
+ * 縦だけ画面の中央から始める。上のタブや見出しはリストの外にあり、そこからドラッグしてもリストが動かないため。
+ * 指が区画の端に着いたら、区画の中央で持ち直して続ける (そうしないと少ししかスクロールできない)。
  *
  * View も時刻も使わないので、JVM のテストで確かめられる。実際の送信とタイマーは [TouchInjector] が受け持つ。
  */
@@ -53,16 +56,19 @@ class GestureSynth(private val clock: () -> Long) {
 
     /**
      * スクロール。distance は GestureDetector と同じく「前回位置 - 今回位置」(指の動きと逆向き)。
-     * [area] はドラッグを始める位置を含む区画 (WebView や地図枠など)。最初の 1 回だけ使う
+     * [area] はドラッグを始める位置を含む区画 (WebView や地図枠など)。最初の 1 回だけ使う。
+     * [wholeScreen] は区画が見つからず画面全体 (Compose の画面) のとき
      */
-    fun scroll(distanceX: Float, distanceY: Float, area: Box): List<TouchEvent> {
+    fun scroll(distanceX: Float, distanceY: Float, area: Box, wholeScreen: Boolean = false): List<TouchEvent> {
         val now = clock()
         val events = mutableListOf<TouchEvent>()
         if (!dragging) {
             pane = area
             val resume = resumeAt?.takeIf { now - it.third <= RESUME_MS && area.contains(it.first, it.second) }
+            val vertical = abs(distanceY) >= abs(distanceX)
             val start = resume?.let { it.first to it.second }
                 ?: lastTap?.takeIf { area.contains(it.first, it.second) }
+                    ?.let { (tx, ty) -> if (wholeScreen && vertical) tx to area.centerY else tx to ty }
                 ?: (area.centerX to area.centerY)
             events += press(start.first, start.second, now)
         }
@@ -87,21 +93,35 @@ class GestureSynth(private val clock: () -> Long) {
     }
 
     /**
-     * 指を勢いよく離した。速さ (px/秒、指の向き) に合う動きを 1 フレーム分足してから離すので、
+     * 指を勢いよく離した。速さ (px/秒、指の向き) に合う分だけ 1 フレーム先の位置で離すので、
      * 各 View が慣性スクロールを付けられる
      */
     fun fling(velocityX: Float, velocityY: Float): List<TouchEvent> {
         if (!dragging) return emptyList()
-        val t = maxOf(clock(), lastMoveTime + FRAME_MS)
-        val dt = (t - lastMoveTime) / 1000f
-        val fx = (x + velocityX * dt).coerceIn(pane.left, pane.right)
-        val fy = (y + velocityY * dt).coerceIn(pane.top, pane.bottom)
         dragging = false
         resumeAt = null
-        return listOf(
-            TouchEvent(TouchEvent.Action.MOVE, fx, fy, downTime, t),
-            TouchEvent(TouchEvent.Action.UP, fx, fy, downTime, t),
-        )
+        // 各 View は直近の数フレームの位置と時刻から速さを出すので、その速さで動く指を数フレーム分作り、
+        // 最後の位置で離す。時刻は送る側 (TouchInjector) が実際に送るときに付け直す
+        val events = mutableListOf<TouchEvent>()
+        var t = lastMoveTime
+        // 区画の端に着いて動けなくなると速さが落ちるので、足りなければ先に持ち直す
+        val travelX = velocityX * FRAME_MS * FLING_FRAMES / 1000f
+        val travelY = velocityY * FRAME_MS * FLING_FRAMES / 1000f
+        if (!inside(x + travelX, y + travelY)) {
+            events += TouchEvent(TouchEvent.Action.UP, x, y, downTime, t)
+            val gx = if (inside(x + travelX, y)) x else pane.centerX - travelX / 2
+            val gy = if (inside(x, y + travelY)) y else pane.centerY - travelY / 2
+            events += press(gx, gy, t)
+            dragging = false
+        }
+        repeat(FLING_FRAMES) {
+            t += FRAME_MS
+            x = (x + velocityX * FRAME_MS / 1000f).coerceIn(pane.left, pane.right)
+            y = (y + velocityY * FRAME_MS / 1000f).coerceIn(pane.top, pane.bottom)
+            events += TouchEvent(TouchEvent.Action.MOVE, x, y, downTime, t)
+        }
+        events += TouchEvent(TouchEvent.Action.UP, x, y, downTime, t)
+        return events
     }
 
     /**
@@ -137,7 +157,10 @@ class GestureSynth(private val clock: () -> Long) {
         /** 指を止めてから、この間に続きが来たら同じ位置から続ける */
         const val RESUME_MS = 1_000L
 
-        private const val FRAME_MS = 16L
+        const val FRAME_MS = 16L
+
+        /** フリングで足すフレームの数 */
+        const val FLING_FRAMES = 3
 
         /** 区画の端からこれだけ内側で持ち直す (端ぎりぎりはスクロールの外側のことがある) */
         private const val EDGE = 8f

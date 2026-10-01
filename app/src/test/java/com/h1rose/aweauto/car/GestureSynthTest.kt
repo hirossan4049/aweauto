@@ -36,12 +36,29 @@ class GestureSynthTest {
     }
 
     @Test
-    fun dragStartsWhereYouLastTapped() {
+    fun dragInsideAPaneStartsWhereYouLastTapped() {
+        val webView = Box(0f, 0f, 1280f, 600f)
         synth.tap(300f, 400f)
-        val e = synth.scroll(0f, 10f, screen)
+        val e = synth.scroll(0f, 10f, webView)
         assertEquals(DOWN, e[0].action)
         assertEquals(300f to 400f, e[0].x to e[0].y)
         assertEquals(390f, e.last().y)
+    }
+
+    @Test
+    fun verticalDragOnComposeScreenStartsInTheMiddle() {
+        // 上のタブを押した直後の縦スクロールは、リストの中 (画面の縦の中央) から始める。横位置はタップのまま
+        synth.tap(181f, 50f)
+        val e = synth.scroll(0f, -30f, screen, wholeScreen = true)
+        assertEquals(181f to 300f, e[0].x to e[0].y)
+    }
+
+    @Test
+    fun horizontalDragOnComposeScreenStaysOnTheTappedRow() {
+        // 横の棚をスクロールするときは、タップした行のまま
+        synth.tap(500f, 200f)
+        val e = synth.scroll(30f, 2f, screen, wholeScreen = true)
+        assertEquals(500f to 200f, e[0].x to e[0].y)
     }
 
     @Test
@@ -69,9 +86,10 @@ class GestureSynthTest {
         synth.tap(400f, 300f)
         dragUp(times = 3, dy = 20f)
         val e = synth.fling(0f, -3000f)
-        assertEquals(listOf(MOVE, UP), e.map { it.action })
-        // 16ms で 3000px/秒 → 48px 上へ
-        assertEquals(300f - 60f - 48f, e[0].y, 0.5f)
+        assertEquals(listOf(MOVE, MOVE, MOVE, UP), e.map { it.action })
+        // 1 フレーム (16ms) ごとに 3000px/秒 → 48px ずつ上へ
+        assertEquals(listOf(192f, 144f, 96f, 96f), e.map { it.y })
+        assertEquals(listOf(16L, 16L, 0L), e.zipWithNext { a, b -> b.eventTime - a.eventTime })
         assertTrue(synth.fling(0f, -3000f).isEmpty())
     }
 
