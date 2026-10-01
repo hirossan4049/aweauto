@@ -108,7 +108,7 @@ private class ProviderSurfaceView(
         if (w < MIN_SIZE_PX || h < MIN_SIZE_PX || holder.surface?.isValid != true) return
         if (attached == surfaceSize) return
         attached = surfaceSize
-        p.attach(holder.surface, w, h, resources.displayMetrics.densityDpi)
+        p.attach(holder.surface, w, h, mapDensityDpi(w, h, resources.displayMetrics.densityDpi))
     }
 
     @SuppressLint("ClickableViewAccessibility")
@@ -119,6 +119,26 @@ private class ProviderSurfaceView(
 }
 
 private const val ATTACH_SETTLE_MS = 300L
+
+/**
+ * 地図アプリに見せる画面の最小サイズ (dp)。スマホの縦画面くらいの広さがあれば
+ * 検索欄・下のシート・ボタン類が重ならずに並ぶ。
+ */
+private const val MAP_MIN_WIDTH_DP = 400f
+private const val MAP_MIN_HEIGHT_DP = 320f
+
+/** 小さくしすぎると文字が読めなくなるので、ここより下げない */
+private const val MAP_MIN_DPI = 110
+
+/**
+ * 地図枠が小さいときは密度を下げて、地図アプリには「広い画面」として描かせる。
+ * 文字やボタンは小さくなるが、検索欄や下のシートが画面を埋めて地図が見えなくなるのを防ぐ。
+ */
+internal fun mapDensityDpi(widthPx: Int, heightPx: Int, baseDpi: Int): Int {
+    val fitWidth = widthPx * 160f / MAP_MIN_WIDTH_DP
+    val fitHeight = heightPx * 160f / MAP_MIN_HEIGHT_DP
+    return minOf(baseDpi.toFloat(), fitWidth, fitHeight).toInt().coerceIn(minOf(MAP_MIN_DPI, baseDpi), baseDpi)
+}
 private const val MIN_SIZE_PX = 16
 
 @Composable
