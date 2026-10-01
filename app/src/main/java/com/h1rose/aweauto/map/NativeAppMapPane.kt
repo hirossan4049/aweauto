@@ -1,12 +1,15 @@
 package com.h1rose.aweauto.map
 
+import android.content.ComponentName
 import android.content.Context
-import android.hardware.display.DisplayManager
-import android.hardware.display.VirtualDisplay
+import android.content.ServiceConnection
+import android.os.IBinder
+import android.os.RemoteException
 import android.os.SystemClock
 import android.util.Log
 import android.view.MotionEvent
 import android.view.Surface
+import com.h1rose.aweauto.BuildConfig
 import com.h1rose.aweauto.shizuku.ShizukuState
 import com.h1rose.aweauto.shizuku.ShizukuStatus
 import kotlinx.coroutines.CoroutineScope
@@ -16,6 +19,8 @@ import kotlinx.coroutines.launch
 import rikka.shizuku.Shizuku
 
 private const val TAG = "NativeAppMapPane"
+private const val INPUT_BIND_TIMEOUT_MS = 2_000L
+private const val MAX_PENDING_INPUTS = 8
 
 enum class NativeMapApp(
     val id: String,
@@ -34,8 +39,8 @@ enum class NativeMapApp(
 /**
  * 左の地図枠に端末の地図アプリ本体を起動する。
  *
- * Android Auto から渡される Surface を VirtualDisplay にし、Shizuku の shell 権限で
- * `am start --display` と `input -d` を実行して外部アプリをその display へ載せる。
+ * Android Auto から渡される Surface を Shizuku UserService へ渡し、shell UID 側で
+ * VirtualDisplay の作成・地図アプリ起動・InputForwarder 経由のタッチ注入を行う。
  */
 class NativeAppMapPane(
     context: Context,
@@ -44,9 +49,46 @@ class NativeAppMapPane(
     override val label = app.label
 
     private val appContext = context.applicationContext
-    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
-    private var virtualDisplay: VirtualDisplay? = null
-    private var displayId: Int? = null
+    private val inputScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+    private var inputService: IMapInputService? = null
+    private var bindingInputService = false
+    private var inputBindStartedAt = 0L
+    private var attached = false
+    private var pendingAttach: PendingAttach? = null
+    private val pendingInputs = ArrayDeque<PendingInput>()
+
+    private val inputConnection = object : ServiceConnection {
+        override fun onServiceConnected(name: ComponentName, service: IBinder) {
+            val connected = IMapInputService.Stub.asInterface(service)
+            inputService = connected
+            bindingInputService = false
+            Log.i(TAG, "input service connected")
+            inputScope.launch { attachRemote(connected) }
+        }
+
+        override fun onServiceDisconnected(name: ComponentName) {
+            inputService = null
+            bindingInputService = false
+            Log.w(TAG, "input service disconnected")
+        }
+
+        override fun onBindingDied(name: ComponentName) {
+            inputService = null
+            bindingInputService = false
+            Log.w(TAG, "input service binding died")
+        }
+
+        override fun onNullBinding(name: ComponentName) {
+            inputService = null
+            bindingInputService = false
+            Log.w(TAG, "input service null binding")
+        }
+    }
+
+    private val staleInputConnection = object : ServiceConnection {
+        override fun onServiceConnected(name: ComponentName, service: IBinder) = Unit
+        override fun onServiceDisconnected(name: ComponentName) = Unit
+    }
 
     private var downX = 0f
     private var downY = 0f
@@ -56,26 +98,26 @@ class NativeAppMapPane(
     private var moved = false
 
     override fun attach(surface: Surface, width: Int, height: Int, densityDpi: Int) {
-        detach()
-        val dm = appContext.getSystemService(DisplayManager::class.java)
-        val vd = dm.createVirtualDisplay(
-            "aweauto-${app.id}-map",
-            width,
-            height,
-            densityDpi,
-            surface,
-            DisplayManager.VIRTUAL_DISPLAY_FLAG_PUBLIC or
-                DisplayManager.VIRTUAL_DISPLAY_FLAG_PRESENTATION,
-        )
-        virtualDisplay = vd
-        displayId = vd.display.displayId
-        launchMap()
+        if (!isInstalled(app.packageName)) {
+            Log.w(TAG, "${app.packageName} is not installed")
+            return
+        }
+        pendingAttach = PendingAttach(surface, width, height, densityDpi)
+        ensureInputService()
+        inputService?.let { service -> inputScope.launch { attachRemote(service) } }
     }
 
     override fun detach() {
-        displayId = null
-        virtualDisplay?.release()
-        virtualDisplay = null
+        pendingAttach = null
+        attached = false
+        inputService?.let { service ->
+            inputScope.launch {
+                if (pendingAttach != null) return@launch
+                runCatching { service.detach() }
+                    .onFailure { Log.w(TAG, "remote detach failed", it) }
+            }
+        }
+        synchronized(pendingInputs) { pendingInputs.clear() }
     }
 
     override fun onTouch(action: Int, x: Float, y: Float, downTime: Long, eventTime: Long) {
@@ -94,36 +136,138 @@ class NativeAppMapPane(
                 lastY = y
             }
             MotionEvent.ACTION_UP -> {
-                val id = displayId ?: return
                 val duration = (SystemClock.uptimeMillis() - downAt).coerceAtLeast(1L)
-                if (moved) {
-                    runShell("input -d $id swipe ${downX.i()} ${downY.i()} ${lastX.i()} ${lastY.i()} $duration")
-                } else {
-                    runShell("input -d $id tap ${x.i()} ${y.i()}")
-                }
+                injectTouch(moved, x, y, duration)
             }
             MotionEvent.ACTION_CANCEL -> moved = false
         }
     }
 
     override fun onBack(): Boolean {
-        val id = displayId ?: return false
-        runShell("input -d $id keyevent BACK")
+        ensureInputService()
+        val service = inputService
+        if (service == null || !attached) {
+            enqueueInput(PendingInput.Back)
+            service?.let { inputScope.launch { attachRemote(it) } }
+            return true
+        }
+        inputScope.launch {
+            runCatching {
+                service.back()
+            }.onFailure {
+                Log.w(TAG, "back inject failed", it)
+                if (it is RemoteException) inputService = null
+            }
+        }
         return true
     }
 
-    private fun launchMap() {
-        val id = displayId ?: return
+    private fun ensureInputService() {
+        if (inputService != null) return
+        if (bindingInputService) {
+            val elapsed = SystemClock.uptimeMillis() - inputBindStartedAt
+            if (elapsed < INPUT_BIND_TIMEOUT_MS) return
+            Log.w(TAG, "input service bind timed out after ${elapsed}ms; retrying")
+            bindingInputService = false
+        }
         if (ShizukuState.status.value != ShizukuStatus.READY) {
-            Log.w(TAG, "Shizuku is not ready; cannot launch ${app.packageName} on display $id")
+            Log.w(TAG, "Shizuku is not ready; cannot bind input service")
             return
         }
-        if (!isInstalled(app.packageName)) {
-            Log.w(TAG, "${app.packageName} is not installed")
+        bindingInputService = true
+        inputBindStartedAt = SystemClock.uptimeMillis()
+        runCatching {
+            val args = inputServiceArgs()
+            Log.i(TAG, "removing stale input service")
+            Shizuku.unbindUserService(args, staleInputConnection, true)
+            Log.i(TAG, "binding input service")
+            Shizuku.bindUserService(args, inputConnection)
+        }.onFailure {
+            bindingInputService = false
+            Log.w(TAG, "failed to bind input service", it)
+        }
+    }
+
+    private fun inputServiceArgs(): Shizuku.UserServiceArgs =
+        Shizuku.UserServiceArgs(
+            ComponentName(BuildConfig.APPLICATION_ID, NativeMapInputUserService::class.java.name),
+        )
+            .daemon(false)
+            .debuggable(BuildConfig.DEBUG)
+            .processNameSuffix("map_input")
+            .tag("aweauto_map_input")
+            .version(BuildConfig.VERSION_CODE)
+
+    private fun attachRemote(service: IMapInputService) {
+        val request = pendingAttach ?: return
+        runCatching {
+            val id = service.attach(request.surface, request.width, request.height, request.densityDpi, app.packageName)
+            attached = true
+            Log.i(TAG, "remote map display attached id=$id")
+            flushPendingInputs(service)
+        }.onFailure {
+            attached = false
+            Log.w(TAG, "remote attach failed", it)
+            if (it is RemoteException) inputService = null
+        }
+    }
+
+    private fun injectTouch(isSwipe: Boolean, x: Float, y: Float, duration: Long) {
+        ensureInputService()
+        val service = inputService
+        if (service == null || !attached) {
+            enqueueInput(
+                if (isSwipe) {
+                    PendingInput.Swipe(downX, downY, lastX, lastY, duration)
+                } else {
+                    PendingInput.Tap(x, y)
+                },
+            )
+            service?.let { inputScope.launch { attachRemote(it) } }
             return
         }
-        val command = "am start --display $id -a android.intent.action.VIEW -d 'geo:0,0?q=現在地' -p ${app.packageName}"
-        runShell(command)
+        val startX = downX
+        val startY = downY
+        val endX = lastX
+        val endY = lastY
+        inputScope.launch {
+            runCatching {
+                if (isSwipe) {
+                    service.swipe(startX, startY, endX, endY, duration)
+                } else {
+                    service.tap(x, y)
+                }
+            }.onFailure {
+                Log.w(TAG, "touch inject failed", it)
+                if (it is RemoteException) inputService = null
+            }
+        }
+    }
+
+    private fun enqueueInput(input: PendingInput) {
+        synchronized(pendingInputs) {
+            if (pendingInputs.size >= MAX_PENDING_INPUTS) pendingInputs.removeFirst()
+            pendingInputs.addLast(input)
+        }
+        Log.w(TAG, "input service is not connected; queued ${input.name}")
+    }
+
+    private fun flushPendingInputs(service: IMapInputService) {
+        while (true) {
+            val input = synchronized(pendingInputs) {
+                if (pendingInputs.isEmpty()) null else pendingInputs.removeFirst()
+            } ?: return
+            runCatching {
+                input.send(service)
+            }.onFailure {
+                Log.w(TAG, "pending ${input.name} inject failed", it)
+                if (it is RemoteException) {
+                    inputService = null
+                    synchronized(pendingInputs) { pendingInputs.addFirst(input) }
+                    return
+                }
+            }
+        }
     }
 
     private fun isInstalled(packageName: String): Boolean =
@@ -133,31 +277,33 @@ class NativeAppMapPane(
             true
         }.getOrDefault(false)
 
-    private fun runShell(command: String) {
-        if (ShizukuState.status.value != ShizukuStatus.READY) return
-        scope.launch {
-            runCatching {
-                val process = shizukuProcess(arrayOf("sh", "-c", command))
-                process.inputStream.bufferedReader().use { it.readText() }
-                process.errorStream.bufferedReader().use { err ->
-                    val text = err.readText()
-                    if (text.isNotBlank()) Log.w(TAG, text.trim())
-                }
-                process.waitFor()
-            }.onFailure { Log.w(TAG, "shell failed: $command", it) }
+    private data class PendingAttach(
+        val surface: Surface,
+        val width: Int,
+        val height: Int,
+        val densityDpi: Int,
+    )
+
+    private sealed class PendingInput(val name: String) {
+        abstract fun send(service: IMapInputService)
+
+        data class Tap(val x: Float, val y: Float) : PendingInput("tap") {
+            override fun send(service: IMapInputService) = service.tap(x, y)
+        }
+
+        data class Swipe(
+            val startX: Float,
+            val startY: Float,
+            val endX: Float,
+            val endY: Float,
+            val durationMs: Long,
+        ) : PendingInput("swipe") {
+            override fun send(service: IMapInputService) =
+                service.swipe(startX, startY, endX, endY, durationMs)
+        }
+
+        data object Back : PendingInput("back") {
+            override fun send(service: IMapInputService) = service.back()
         }
     }
-
-    private fun shizukuProcess(command: Array<String>): Process {
-        val method = Shizuku::class.java.getDeclaredMethod(
-            "newProcess",
-            Array<String>::class.java,
-            Array<String>::class.java,
-            String::class.java,
-        )
-        method.isAccessible = true
-        return method.invoke(null, command, null, null) as Process
-    }
-
-    private fun Float.i(): Int = toInt().coerceAtLeast(0)
 }
