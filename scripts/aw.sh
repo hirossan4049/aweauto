@@ -38,6 +38,10 @@ Shizuku
 操作
   send <url>         配信サイトの URL を車の画面で開く (共有と同じ)
   devtools           WebView の DevTools を localhost:9333 に転送 (chrome://inspect でも可)
+  touch tap <x> <y>  車の画面をタップ (Android Auto と同じ形で送る。debug ビルドのみ)
+  touch scroll <dx> <dy> [count] [vy]
+                     指を dx,dy ずつ count 回 (16ms ごと) 動かす。vy を付けると最後にその速さでフリング
+                     dy が正なら指は上へ (コンテンツは下へスクロール)
 
 開発用
   e2e-map            ネイティブ地図枠の実機 E2E (再起動・サイズ変更・残プロセス確認)
@@ -146,6 +150,19 @@ cmd_devtools() {
   echo "http://localhost:9333/json で WebView の一覧が見られます"
 }
 
+cmd_touch() {
+  need_device
+  local a=(adb shell am broadcast -a com.h1rose.aweauto.debug.TOUCH -p "$PKG")
+  case "${1:-}" in
+    tap) "${a[@]}" --es cmd tap --ef x "${2:?x}" --ef y "${3:?y}" >/dev/null ;;
+    scroll)
+      local extra=()
+      [ -n "${5:-}" ] && extra=(--ef vy "$5")
+      "${a[@]}" --es cmd scroll --ef dx "${2:?dx}" --ef dy "${3:?dy}" --ei count "${4:-20}" --ei interval 16 "${extra[@]}" >/dev/null ;;
+    *) die "使い方: scripts/aw.sh touch tap <x> <y> | touch scroll <dx> <dy> [count] [vy]" ;;
+  esac
+}
+
 cmd_mute() {
   need_device
   local v
@@ -187,6 +204,7 @@ main() {
     e2e-map) exec "$ROOT/scripts/e2e-map.sh" "$@" ;;
     resizable) cmd_resizable "$@" ;;
     mute) cmd_mute "$@" ;;
+    touch) cmd_touch "$@" ;;
     help | -h | --help) usage ;;
     *) echo "不明なコマンド: $cmd" >&2; usage; exit 1 ;;
   esac

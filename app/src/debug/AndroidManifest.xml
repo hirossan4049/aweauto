@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- debug ビルドだけに入る開発用の部品 -->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <application>
+        <!--
+          PC から車の画面へのタッチを送り込む (scripts/aw.sh touch)。
+          DUMP 権限は adb の shell しか持っていないので、ほかのアプリからは送れない
+        -->
+        <receiver
+            android:name=".debug.TouchDebugReceiver"
+            android:exported="true"
+            android:permission="android.permission.DUMP">
+            <intent-filter>
+                <action android:name="com.h1rose.aweauto.debug.TOUCH" />
+            </intent-filter>
+        </receiver>
+    </application>
+</manifest>

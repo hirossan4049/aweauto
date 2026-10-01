@@ -85,7 +85,7 @@ class SurfaceRenderer(private val carContext: CarContext, lifecycle: Lifecycle) 
         }
 
         override fun onFling(velocityX: Float, velocityY: Float) {
-            // 慣性は TouchInjector が送る MOVE → UP の速度から各 View が自前で付ける
+            CarDisplayHost.touch?.fling(velocityX, velocityY)
         }
     }
 
