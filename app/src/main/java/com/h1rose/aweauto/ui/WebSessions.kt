@@ -10,6 +10,7 @@ import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import com.h1rose.aweauto.R
+import com.h1rose.aweauto.data.StreamService
 import com.h1rose.aweauto.cast.CastBridge
 import com.h1rose.aweauto.web.HlsPrefetcher
 
@@ -72,6 +73,11 @@ private fun resumePlayback(view: WebView, attempt: Int) {
             }
         }, 700)
     }, RESUME_DELAYS_MS[attempt])
+}
+
+/** そのサイトの開いている画面を読み込み直す (ログイン・ログアウトの後など) */
+fun reloadSessions(service: StreamService) {
+    sessions.filterKeys { it.service == service }.values.forEach { it.view.reload() }
 }
 
 /** 戻る・ホームで履歴から外れた画面の WebView を捨てる */

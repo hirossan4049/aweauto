@@ -14,6 +14,7 @@ import android.webkit.WebResourceRequest
 import android.webkit.WebResourceResponse
 import android.webkit.WebView
 import android.webkit.WebViewClient
+import android.widget.Toast
 import androidx.compose.ui.graphics.Color
 import com.h1rose.aweauto.R
 import com.h1rose.aweauto.adblock.AdBlocker
@@ -25,6 +26,7 @@ import com.h1rose.aweauto.web.HlsPrefetcher
 import com.h1rose.aweauto.web.PlaybackConfig
 import com.h1rose.aweauto.web.SiteTweaks
 import com.h1rose.aweauto.web.UserAgents
+import com.h1rose.aweauto.web.YouTubeAccount
 
 /**
  * サイトを開く WebView を作る。サイトごとの CSS / JS (SiteTweaks)、番組の保存 (HlsPrefetcher)、
@@ -81,6 +83,13 @@ internal fun createWebView(
         )
 
         webViewClient = object : WebViewClient() {
+            // 車の画面ではキーボードを出せないので、Google のログインには進まずスマホでのログインを案内する
+            override fun shouldOverrideUrlLoading(view: WebView, request: WebResourceRequest): Boolean {
+                if (!request.isForMainFrame || !YouTubeAccount.isSignInPage(request.url.toString())) return false
+                Toast.makeText(view.context, R.string.youtube_sign_in_on_phone, Toast.LENGTH_LONG).show()
+                return true
+            }
+
             override fun onPageStarted(view: WebView, url: String?, favicon: Bitmap?) {
                 tweaks.onPage(view, url)
             }

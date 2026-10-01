@@ -47,6 +47,11 @@
                 android:resource="@xml/shortcuts" />
         </activity>
 
+        <!-- スマホで YouTube にログインする画面 -->
+        <activity
+            android:name=".LoginActivity"
+            android:exported="false"
+            android:configChanges="orientation|screenSize|keyboardHidden" />
         <activity
             android:name=".ShareActivity"
             android:exported="true"

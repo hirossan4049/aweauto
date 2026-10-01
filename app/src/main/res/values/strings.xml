@@ -167,4 +167,14 @@
     <string name="cast_clip_label">TV code</string>
     <string name="cast_copied">Copied. Paste it into Link with TV code</string>
     <string name="qr_code">QR code</string>
+
+    <!-- YouTube のアカウント -->
+    <string name="youtube_account_title">YouTube account</string>
+    <string name="youtube_account_signed_in">Signed in. The car screen\'s YouTube uses this account</string>
+    <string name="youtube_account_signed_out">Not signed in. Sign in on this phone to see your subscriptions and history</string>
+    <string name="youtube_sign_in">Sign in</string>
+    <string name="youtube_sign_out">Sign out</string>
+    <string name="youtube_sign_in_on_phone">Sign in from aweauto\'s settings on your phone (the car screen has no keyboard)</string>
+    <string name="youtube_signed_in">Signed in to YouTube</string>
+    <string name="youtube_sign_in_not_done">Not signed in</string>
 </resources>

@@ -22,6 +22,7 @@ import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.h1rose.aweauto.BuildConfig
+import com.h1rose.aweauto.LoginActivity
 import com.h1rose.aweauto.R
 import com.h1rose.aweauto.adblock.AdBlocker
 import com.h1rose.aweauto.adblock.FilterList
@@ -37,6 +38,7 @@ import com.h1rose.aweauto.shizuku.ShizukuKeeper
 import com.h1rose.aweauto.shizuku.ShizukuState
 import com.h1rose.aweauto.shizuku.ShizukuStatus
 import com.h1rose.aweauto.web.HlsCacheStore
+import com.h1rose.aweauto.web.YouTubeAccount
 import java.util.Date
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -82,8 +84,36 @@ private fun LazyListScope.optimizeSection() {
     }
 }
 
+/** YouTube のアカウント。ログインはキーボードが出せるスマホの画面だけでできる */
+private fun LazyListScope.accountSection(context: Context) {
+    item {
+        val signedIn by YouTubeAccount.signedIn.collectAsState()
+        val isCar = LocalIsCar.current
+        // 設定画面を開いたときに数え直す (スマホのログイン画面から戻ったときなど)
+        LaunchedEffect(Unit) { YouTubeAccount.refresh() }
+        ActionRow(
+            title = stringResource(R.string.youtube_account_title),
+            description = stringResource(
+                when {
+                    signedIn -> R.string.youtube_account_signed_in
+                    isCar -> R.string.youtube_sign_in_on_phone
+                    else -> R.string.youtube_account_signed_out
+                },
+            ),
+            action = stringResource(if (signedIn) R.string.youtube_sign_out else R.string.youtube_sign_in),
+            onClick = {
+                when {
+                    signedIn -> YouTubeAccount.signOut()
+                    !isCar -> context.startActivity(Intent(context, LoginActivity::class.java))
+                }
+            },
+        )
+    }
+}
+
 private fun LazyListScope.castSection(context: Context, cast: Boolean) {
     item { SectionLabel(stringResource(R.string.section_cast), AweIcons.Cast) }
+    accountSection(context)
     item {
         SettingRow(
             title = stringResource(R.string.cast_receive_title),
