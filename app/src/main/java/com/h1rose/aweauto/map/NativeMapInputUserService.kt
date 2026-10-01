@@ -115,6 +115,10 @@ class NativeMapInputUserService : IMapInputService.Stub {
         injectMotion(MotionEvent.ACTION_UP, down, down + duration, endX, endY)
     }
 
+    override fun touch(action: Int, x: Float, y: Float, downTime: Long, eventTime: Long) {
+        injectMotion(action, downTime, eventTime, x, y)
+    }
+
     override fun back() {
         val down = SystemClock.uptimeMillis()
         injectKey(KeyEvent.ACTION_DOWN, down, down)
@@ -214,7 +218,7 @@ class NativeMapInputUserService : IMapInputService.Stub {
             } else {
                 method.invoke(forwarder, event)
             }
-            Log.i(INPUT_TAG, "forward ${event.javaClass.simpleName} display=$id result=$result")
+            Log.d(INPUT_TAG, "forward ${event.javaClass.simpleName} display=$id result=$result")
         }.onFailure {
             Log.w(INPUT_TAG, "forward input failed display=$id", it)
         }.also {

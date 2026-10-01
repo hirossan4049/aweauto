@@ -9,4 +9,5 @@ interface IMapInputService {
     void tap(float x, float y) = 3;
     void swipe(float startX, float startY, float endX, float endY, long durationMs) = 4;
     void back() = 5;
+    void touch(int action, float x, float y, long downTime, long eventTime) = 6;
 }

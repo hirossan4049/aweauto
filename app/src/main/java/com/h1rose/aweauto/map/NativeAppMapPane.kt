@@ -7,20 +7,20 @@ import android.os.IBinder
 import android.os.RemoteException
 import android.os.SystemClock
 import android.util.Log
-import android.view.MotionEvent
 import android.view.Surface
 import com.h1rose.aweauto.BuildConfig
 import com.h1rose.aweauto.shizuku.ShizukuState
 import com.h1rose.aweauto.shizuku.ShizukuStatus
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.launch
 import rikka.shizuku.Shizuku
+import java.util.concurrent.Executors
 
 private const val TAG = "NativeAppMapPane"
 private const val INPUT_BIND_TIMEOUT_MS = 2_000L
-private const val MAX_PENDING_INPUTS = 8
+private const val MAX_PENDING_INPUTS = 32
 
 /**
  * 左の地図枠に端末の地図アプリ本体を起動する。
@@ -37,7 +37,11 @@ class NativeAppMapPane(
     override val label get() = app.label
 
     private val appContext = context.applicationContext
-    private val inputScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+    private val inputScope = CoroutineScope(
+        SupervisorJob() + Executors.newSingleThreadExecutor { r ->
+            Thread(r, "aweauto-map-input").apply { isDaemon = true }
+        }.asCoroutineDispatcher(),
+    )
     private var inputService: IMapInputService? = null
     private var bindingInputService = false
     private var inputBindStartedAt = 0L
@@ -77,13 +81,6 @@ class NativeAppMapPane(
         override fun onServiceConnected(name: ComponentName, service: IBinder) = Unit
         override fun onServiceDisconnected(name: ComponentName) = Unit
     }
-
-    private var downX = 0f
-    private var downY = 0f
-    private var lastX = 0f
-    private var lastY = 0f
-    private var downAt = 0L
-    private var moved = false
 
     override fun attach(surface: Surface, width: Int, height: Int, densityDpi: Int) {
         if (!isInstalled(app.packageName)) {
@@ -125,26 +122,7 @@ class NativeAppMapPane(
     }
 
     override fun onTouch(action: Int, x: Float, y: Float, downTime: Long, eventTime: Long) {
-        when (action) {
-            MotionEvent.ACTION_DOWN -> {
-                downX = x
-                downY = y
-                lastX = x
-                lastY = y
-                downAt = SystemClock.uptimeMillis()
-                moved = false
-            }
-            MotionEvent.ACTION_MOVE -> {
-                if (kotlin.math.abs(x - downX) > 8f || kotlin.math.abs(y - downY) > 8f) moved = true
-                lastX = x
-                lastY = y
-            }
-            MotionEvent.ACTION_UP -> {
-                val duration = (SystemClock.uptimeMillis() - downAt).coerceAtLeast(1L)
-                injectTouch(moved, x, y, duration)
-            }
-            MotionEvent.ACTION_CANCEL -> moved = false
-        }
+        injectTouch(action, x, y, downTime, eventTime)
     }
 
     override fun onBack(): Boolean {
@@ -216,31 +194,17 @@ class NativeAppMapPane(
         }
     }
 
-    private fun injectTouch(isSwipe: Boolean, x: Float, y: Float, duration: Long) {
+    private fun injectTouch(action: Int, x: Float, y: Float, downTime: Long, eventTime: Long) {
         ensureInputService()
         val service = inputService
         if (service == null || !attached) {
-            enqueueInput(
-                if (isSwipe) {
-                    PendingInput.Swipe(downX, downY, lastX, lastY, duration)
-                } else {
-                    PendingInput.Tap(x, y)
-                },
-            )
+            enqueueInput(PendingInput.Touch(action, x, y, downTime, eventTime))
             service?.let { inputScope.launch { attachRemote(it) } }
             return
         }
-        val startX = downX
-        val startY = downY
-        val endX = lastX
-        val endY = lastY
         inputScope.launch {
             runCatching {
-                if (isSwipe) {
-                    service.swipe(startX, startY, endX, endY, duration)
-                } else {
-                    service.tap(x, y)
-                }
+                service.touch(action, x, y, downTime, eventTime)
             }.onFailure {
                 Log.w(TAG, "touch inject failed", it)
                 if (it is RemoteException) inputService = null
@@ -291,19 +255,14 @@ class NativeAppMapPane(
     private sealed class PendingInput(val name: String) {
         abstract fun send(service: IMapInputService)
 
-        data class Tap(val x: Float, val y: Float) : PendingInput("tap") {
-            override fun send(service: IMapInputService) = service.tap(x, y)
-        }
-
-        data class Swipe(
-            val startX: Float,
-            val startY: Float,
-            val endX: Float,
-            val endY: Float,
-            val durationMs: Long,
-        ) : PendingInput("swipe") {
-            override fun send(service: IMapInputService) =
-                service.swipe(startX, startY, endX, endY, durationMs)
+        data class Touch(
+            val action: Int,
+            val x: Float,
+            val y: Float,
+            val downTime: Long,
+            val eventTime: Long,
+        ) : PendingInput("touch") {
+            override fun send(service: IMapInputService) = service.touch(action, x, y, downTime, eventTime)
         }
 
         data object Back : PendingInput("back") {
