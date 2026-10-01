@@ -90,6 +90,15 @@
     <string name="notif_access_ready">Allowed. Directions are sent once you start navigating in a map app</string>
     <string name="open_settings">Open settings</string>
     <string name="hud_destination">Destination</string>
+    <string name="hud_custom_title">Show your own text on the HUD</string>
+    <string name="hud_custom_desc">Shown when you\'re not navigating. Directions take priority</string>
+    <string name="hud_custom_text_title">Text</string>
+    <string name="hud_custom_hint">{title} becomes the title of the video that\'s playing, and {time} the current time</string>
+    <string name="hud_custom_insert_title">+ Video title</string>
+    <string name="hud_custom_insert_time">+ Time</string>
+    <string name="hud_custom_preview">Now showing: %1$s</string>
+    <string name="hud_custom_preview_empty">Nothing right now (the title only fills in while a video plays)</string>
+    <string name="hud_custom_edit_on_phone">Change the text in aweauto\'s settings on your phone</string>
 
     <string name="section_shizuku">Extensions (Shizuku)</string>
     <string name="map_app_title">Map pane app</string>

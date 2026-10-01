@@ -87,6 +87,15 @@
     <string name="notif_access_ready">許可済み。地図アプリでナビを始めると案内を送ります</string>
     <string name="open_settings">設定を開く</string>
     <string name="hud_destination">目的地</string>
+    <string name="hud_custom_title">HUD に好きな文字を出す</string>
+    <string name="hud_custom_desc">ナビをしていないときに出します。ナビ中は道案内を優先します</string>
+    <string name="hud_custom_text_title">出す文字</string>
+    <string name="hud_custom_hint">{title} は再生中の動画の題名、{time} は今の時刻に置き換わります</string>
+    <string name="hud_custom_insert_title">+ 動画の題名</string>
+    <string name="hud_custom_insert_time">+ 時刻</string>
+    <string name="hud_custom_preview">今の表示: %1$s</string>
+    <string name="hud_custom_preview_empty">今は何も出しません (題名は動画の再生中だけ入ります)</string>
+    <string name="hud_custom_edit_on_phone">文字はスマホの aweauto の設定画面で変えられます</string>
 
     <string name="section_shizuku">拡張 (Shizuku)</string>
     <string name="map_app_title">地図枠に出すアプリ</string>

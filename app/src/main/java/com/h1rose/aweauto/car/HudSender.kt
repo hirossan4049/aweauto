@@ -19,14 +19,23 @@ import com.h1rose.aweauto.R
 import com.h1rose.aweauto.data.Prefs
 import com.h1rose.aweauto.hud.Hud
 import com.h1rose.aweauto.hud.HudState
+import com.h1rose.aweauto.hud.HudText
+import com.h1rose.aweauto.hud.NowPlaying
+import com.h1rose.aweauto.ui.AweNav
+import com.h1rose.aweauto.ui.Route
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.launch
+import java.time.LocalTime
 import java.time.ZonedDateTime
+import java.time.temporal.ChronoUnit
 
 private const val TAG = "AweHud"
 
@@ -44,6 +53,7 @@ class HudSender(private val carContext: CarContext, lifecycle: Lifecycle) : Defa
 
     /** 車から「ナビをやめて」と言われたら、いったん送るのをやめる。次のナビが始まるまで再開しない */
     private var stoppedByCar = false
+    private var lastOutput: HudOutput? = null
 
     init {
         lifecycle.addObserver(this)
@@ -58,7 +68,10 @@ class HudSender(private val carContext: CarContext, lifecycle: Lifecycle) : Defa
             }
         })
         scope.launch {
-            combine(Hud.state, Prefs.hud) { state, on -> state.takeIf { on } }
+            // 地図アプリの道案内が最優先。案内が無いときは、設定した好きな文字を出す
+            combine(Hud.state, Prefs.hud, customText()) { state, guidanceOn, custom ->
+                state?.takeIf { guidanceOn }?.let(HudOutput::Guidance) ?: custom?.let(HudOutput::Custom)
+            }
                 .distinctUntilChanged()
                 .collect { send(it) }
         }
@@ -70,23 +83,76 @@ class HudSender(private val carContext: CarContext, lifecycle: Lifecycle) : Defa
         nav.clearNavigationManagerCallback()
     }
 
-    private fun send(state: HudState?) {
-        if (state == null) {
+    /** 好きな文字を置き換えたもの。OFF や空なら null。{time} は 1 分ごと、{title} は再生ページを見ている間だけ入る */
+    private fun customText(): Flow<String?> {
+        val title = combine(NowPlaying.title, AweNav.backStack) { t, stack -> t.takeIf { stack.lastOrNull() is Route.Web } }
+        return combine(Prefs.hudCustom, Prefs.hudCustomText, title, minutes()) { on, template, t, now ->
+            if (on) HudText.format(template, t, now) else null
+        }
+    }
+
+    /** 今の時刻を、分が変わるたびに流す */
+    private fun minutes(): Flow<LocalTime> = flow {
+        while (true) {
+            val now = LocalTime.now()
+            emit(now.truncatedTo(ChronoUnit.MINUTES))
+            delay(((60 - now.second) * 1000L - now.nano / 1_000_000).coerceAtLeast(1L))
+        }
+    }
+
+    private sealed interface HudOutput {
+        data class Guidance(val state: HudState) : HudOutput
+        data class Custom(val text: String) : HudOutput
+    }
+
+    private fun send(output: HudOutput?) {
+        if (output == null) {
             stoppedByCar = false
+            lastOutput = null
             end()
             return
         }
-        if (stoppedByCar) return
+        // 好きな文字を出している間に止められたら、地図枠のアプリで新しくナビが始まるまで待つ
+        // ({time} が変わるたびに再開すると、車側で始めた別のナビと取り合いになる)
+        if (stoppedByCar && !(output is HudOutput.Guidance && lastOutput is HudOutput.Custom)) {
+            lastOutput = output
+            return
+        }
+        stoppedByCar = false
+        lastOutput = output
         runCatching {
             if (!navigating) {
                 nav.navigationStarted()
                 navigating = true
-                Log.i(TAG, "navigation started (${state.packageName})")
+                Log.i(TAG, "navigation started (${(output as? HudOutput.Guidance)?.state?.packageName ?: "custom text"})")
             }
-            nav.updateTrip(trip(state))
+            nav.updateTrip(
+                when (output) {
+                    is HudOutput.Guidance -> trip(output.state)
+                    is HudOutput.Custom -> customTrip(output.text)
+                },
+            )
         }.onFailure {
             Log.w(TAG, "updateTrip failed", it)
         }
+    }
+
+    /**
+     * 好きな文字だけの案内。車によって出す項目が違うので、案内文・道路名・今の道路・目的地の名前の全部に入れる。
+     * 案内には距離が必須なので 0 m を付ける (車によっては「0 m」も出る)。方向を誤解させないよう矢印は「不明」にする
+     */
+    private fun customTrip(text: String): Trip {
+        val now = ZonedDateTime.now()
+        val step = Step.Builder(text)
+            .setRoad(text)
+            .setManeuver(Maneuver.Builder(Maneuver.TYPE_UNKNOWN).build())
+            .build()
+        val estimate = TravelEstimate.Builder(distance(0.0), now).build()
+        return Trip.Builder()
+            .addStep(step, estimate)
+            .addDestination(Destination.Builder().setName(text).build(), estimate)
+            .setCurrentRoad(text)
+            .build()
     }
 
     private fun end() {

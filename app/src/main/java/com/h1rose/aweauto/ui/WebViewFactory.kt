@@ -19,6 +19,7 @@ import com.h1rose.aweauto.adblock.AdBlocker
 import com.h1rose.aweauto.cast.CastBridge
 import com.h1rose.aweauto.data.Prefs
 import com.h1rose.aweauto.data.youtubeVideoId
+import com.h1rose.aweauto.hud.NowPlaying
 import com.h1rose.aweauto.web.HlsPrefetcher
 import com.h1rose.aweauto.web.PlaybackConfig
 import com.h1rose.aweauto.web.SiteTweaks
@@ -103,6 +104,7 @@ internal fun createWebView(
         }
         webChromeClient = object : WebChromeClient() {
             override fun onReceivedTitle(view: WebView, title: String?) {
+                NowPlaying.onTitle(service, view.url, title)
                 val id = youtubeVideoId(view.url) ?: return
                 Prefs.recordWatch(id, title?.removeSuffix(" - YouTube"))
             }

@@ -49,6 +49,7 @@ fun SettingsScreen(onBack: (() -> Unit)?) {
     val cast by Prefs.cast.collectAsState()
     val offlineCache by Prefs.offlineCache.collectAsState()
     val adblock by Prefs.adblock.collectAsState()
+    val hudCustom by Prefs.hudCustom.collectAsState()
     Column(Modifier.fillMaxSize().background(AweColors.Background)) {
         ScreenHeader(stringResource(R.string.settings), onBack)
         LazyColumn(
@@ -58,7 +59,7 @@ fun SettingsScreen(onBack: (() -> Unit)?) {
             optimizeSection()
             castSection(context, cast)
             networkSection(context, offlineCache)
-            hudSection(context)
+            hudSection(context, hudCustom)
             shizukuSection(context)
             if (BuildConfig.DEBUG) developerSection(context)
             adblockSection(adblock)
@@ -149,7 +150,7 @@ private fun LazyListScope.networkSection(context: Context, offlineCache: Boolean
 }
 
 /** 地図アプリの道案内を車の HUD・メーターに送る */
-private fun LazyListScope.hudSection(context: Context) {
+private fun LazyListScope.hudSection(context: Context, hudCustom: Boolean) {
     item { SectionLabel(stringResource(R.string.section_hud), AweIcons.Navigation) }
     item {
         val hud by Prefs.hud.collectAsState()
@@ -179,6 +180,15 @@ private fun LazyListScope.hudSection(context: Context) {
             },
         )
     }
+    item {
+        SettingRow(
+            title = stringResource(R.string.hud_custom_title),
+            description = stringResource(R.string.hud_custom_desc),
+            checked = hudCustom,
+            onChange = { Prefs.setHudCustom(it) },
+        )
+    }
+    if (hudCustom) item { HudTextCard() }
 }
 
 /** 地図枠 (端末の地図アプリ本体) と、それを動かす Shizuku */

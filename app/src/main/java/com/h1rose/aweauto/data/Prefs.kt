@@ -23,6 +23,8 @@ data class HistoryItem(val videoId: String, val title: String, val watchedAt: Lo
 /** スマホ側の設定画面と車載画面で共有する設定。変更は StateFlow で即時に両方へ反映される。 */
 object Prefs {
     private const val MAX_HISTORY = 30
+    /** HUD に出す文字の初期値: 再生中の動画の題名 */
+    const val HUD_CUSTOM_DEFAULT = "{title}"
 
     private lateinit var sp: SharedPreferences
 
@@ -45,6 +47,11 @@ object Prefs {
     /** 地図枠のアプリのナビ案内を車の HUD・メーターに送る */
     private val _hud = MutableStateFlow(true)
     val hud: StateFlow<Boolean> = _hud.asStateFlow()
+    /** ナビをしていないときに HUD に好きな文字を出す */
+    private val _hudCustom = MutableStateFlow(false)
+    val hudCustom: StateFlow<Boolean> = _hudCustom.asStateFlow()
+    private val _hudCustomText = MutableStateFlow(HUD_CUSTOM_DEFAULT)
+    val hudCustomText: StateFlow<String> = _hudCustomText.asStateFlow()
     private val _shizukuAutoRestart = MutableStateFlow(true)
     val shizukuAutoRestart: StateFlow<Boolean> = _shizukuAutoRestart.asStateFlow()
     private val _cast = MutableStateFlow(true)
@@ -71,6 +78,8 @@ object Prefs {
         ShizukuState.autoRestart = _shizukuAutoRestart.value
         _splitMap.value = sp.getBoolean("split_map", false)
         _hud.value = sp.getBoolean("hud", true)
+        _hudCustom.value = sp.getBoolean("hud_custom", false)
+        _hudCustomText.value = sp.getString("hud_custom_text", HUD_CUSTOM_DEFAULT) ?: HUD_CUSTOM_DEFAULT
         _mapApp.value = sp.getString("map_app", "google") ?: "google"
         _filterLists.value = FilterList.entries.filter { sp.getBoolean(filterKey(it), it.defaultOn) }.toSet()
     }
@@ -95,6 +104,16 @@ object Prefs {
     fun setHud(enabled: Boolean) {
         sp.edit().putBoolean("hud", enabled).apply()
         _hud.value = enabled
+    }
+
+    fun setHudCustom(enabled: Boolean) {
+        sp.edit().putBoolean("hud_custom", enabled).apply()
+        _hudCustom.value = enabled
+    }
+
+    fun setHudCustomText(text: String) {
+        sp.edit().putString("hud_custom_text", text).apply()
+        _hudCustomText.value = text
     }
 
     fun setDevMute(enabled: Boolean) {
