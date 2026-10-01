@@ -30,6 +30,10 @@ android {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
+    testOptions {
+        // JVM のテストでも android.util.Log などを呼べるようにする (何もしない)
+        unitTests.isReturnDefaultValues = true
+    }
     kotlinOptions {
         jvmTarget = "17"
     }
@@ -68,4 +72,6 @@ dependencies {
     testImplementation("junit:junit:4.13.2")
     // Android の org.json は JVM テストではスタブなので本物を使う
     testImplementation("org.json:json:20240303")
+    // HLS キャッシュの並行処理のテスト用の HTTP サーバー
+    testImplementation("com.squareup.okhttp3:mockwebserver:4.12.0")
 }

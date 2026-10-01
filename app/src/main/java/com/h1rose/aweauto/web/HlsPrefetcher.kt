@@ -260,7 +260,7 @@ private fun Request.Builder.forwardHeaders(headers: Map<String, String>) {
 }
 
 /** セグメントのディスクキャッシュ。上限を超えたら古いものから消す */
-class HlsCacheStore private constructor(private val dir: File) {
+class HlsCacheStore internal constructor(private val dir: File) {
     /**
      * 同じセグメントを先読みとプレーヤーが同時に書かないための排他。
      * 再生経路では WebView が別スレッド (Chrome_IOThread) でストリームを閉じたときに解放するので、

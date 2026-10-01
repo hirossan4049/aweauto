@@ -2,7 +2,6 @@ package com.h1rose.aweauto
 
 import android.app.Activity
 import android.content.Intent
-import android.net.Uri
 import android.os.Bundle
 import android.widget.Toast
 import com.h1rose.aweauto.data.StreamService
@@ -28,19 +27,24 @@ class ShareActivity : Activity() {
     }
 
     companion object {
-        private val urlPattern = Regex("""https?://\S+""")
+        /** http(s)://ホスト/パス?クエリ#フラグメント。共有の文章は日本語などが混ざるので、厳密な URI としては読まない */
+        private val urlPattern = Regex("""https?://([^/?#\s]+)(/[^?#\s]*)?(\?[^#\s]*)?(#\S*)?""")
 
+        /** 共有された文章の中のリンクから、車の画面で開く先を決める。対応していないサイトなら null */
         fun routeFor(text: String): Route.Web? {
-            val url = urlPattern.find(text)?.value ?: return null
-            val uri = Uri.parse(url)
-            val host = uri.host ?: return null
+            val m = urlPattern.find(text) ?: return null
+            val url = m.value
+            val host = m.groupValues[1].substringBefore(':').lowercase()
+            val path = m.groupValues[2]
+            val segments = path.split('/').filter { it.isNotEmpty() }
             return when {
-                host == "youtu.be" -> uri.lastPathSegment?.let { youtube("https://m.youtube.com/watch?v=$it") }
-                host.endsWith("youtube.com") -> {
-                    val shorts = uri.pathSegments.takeIf { it.firstOrNull() == "shorts" }?.getOrNull(1)
+                host == "youtu.be" -> segments.firstOrNull()?.let { youtube("https://m.youtube.com/watch?v=$it") }
+                host == "youtube.com" || host.endsWith(".youtube.com") -> {
+                    val shorts = segments.takeIf { it.firstOrNull() == "shorts" }?.getOrNull(1)
                     youtube(
                         if (shorts != null) "https://m.youtube.com/watch?v=$shorts"
-                        else uri.buildUpon().authority("m.youtube.com").build().toString()
+                        // スマホ版のページにそろえる (www. や music. のままだと PC 版や別のサイトになる)
+                        else "https://m.youtube.com$path${m.groupValues[3]}${m.groupValues[4]}"
                     )
                 }
                 // それ以外のサイトは StreamService.hosts で見分ける (サイトを足すときは StreamService に書くだけでいい)
