@@ -9,6 +9,7 @@
 
 root 不要 · Android Auto は改造しない · アプリを1つ入れるだけ
 
+[![CI](https://img.shields.io/github/actions/workflow/status/hirossan4049/aweauto/ci.yml?branch=main&style=flat-square&label=CI)](https://github.com/hirossan4049/aweauto/actions/workflows/ci.yml)
 [![Android 9+](https://img.shields.io/badge/Android-9%2B-3DDC84?style=flat-square&logo=android&logoColor=white)](#インストール)
 [![Kotlin](https://img.shields.io/badge/Kotlin-2.1-7F52FF?style=flat-square&logo=kotlin&logoColor=white)](app)
 [![Jetpack Compose](https://img.shields.io/badge/Jetpack%20Compose-M3-4285F4?style=flat-square&logo=jetpackcompose&logoColor=white)](app)
@@ -219,6 +220,9 @@ flowchart LR
 | `scripts/aw.sh e2e-map --apps all` | 地図枠の実機 E2E |
 | `scripts/aw.sh readme-shots` | README のスクリーンショットを DHU で撮り直す |
 | `./gradlew :app:testDebugUnitTest` | 単体テスト |
+| `./gradlew :app:lintDebug` | lint。警告もビルドの失敗になるので、0 件を保つ |
+
+push と pull request のたびに、[CI](.github/workflows/ci.yml) が単体テスト・lint・release ビルドを走らせ、release の APK を添付します。
 
 ### サイトを追加する
 
