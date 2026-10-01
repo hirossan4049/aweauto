@@ -46,6 +46,12 @@ English | [日本語](README.ja.md)
 - 📶 **Made for dead zones.**
   - **TVer episodes are downloaded to disk in the background as you watch.** Every HLS segment listed in the playlist is fetched and then served to the player from disk. Once an episode is cached, tunnels and dead zones don't interrupt it.
   - A quality cap (auto/720p/480p/360p) applies to both sites. *Experimental:* a larger read-ahead for YouTube.
+- 🗺️ **Your map app next to the video** *(needs [Shizuku](https://shizuku.rikka.app/))*.
+  - The real Google Maps, Yahoo! MAP or any other installed map/navigation app runs in a pane beside the video, and you can touch it.
+  - Split left/right, swap sides, drag the width, or shrink the map to a portrait picture-in-picture window.
+  - Installed map apps are found automatically. Waze is left out because it locks its own screen while Android Auto is connected.
+  - aweauto restarts Shizuku by itself if it stops when you plug into the car (after a one-time `scripts/aw.sh tcpip`).
+- 🧭 **Turn-by-turn on the car's HUD and instrument cluster.** aweauto reads the guidance notification of the map app you're navigating with (turn, distance, road, arrival time) and passes it to the car through Android Auto's navigation API. What appears depends on the car. Needs notification access.
 
 ## Screenshots
 
@@ -86,6 +92,7 @@ flowchart LR
 
 - An Android 9+ phone with Android Auto installed
 - JDK 17 and the Android SDK (platform 35)
+- For the map pane: [Shizuku](https://shizuku.rikka.app/), started over adb (`scripts/aw.sh shizuku`)
 
 ### Build and install
 
@@ -112,18 +119,22 @@ Then enable unknown sources in Android Auto:
 
 ## Development
 
-- **Try it without a car.** Use the [Desktop Head Unit](https://developer.android.com/training/cars/testing/dhu):
-  1. Install it with `sdkmanager "extras;google;auto"`.
-  2. In Android Auto's developer menu, choose **Start head unit server**.
-  3. Run `adb forward tcp:5277 tcp:5277 && ./desktop-head-unit`.
-- **Tweak the CSS.** Debug builds enable WebView remote debugging, so you can inspect the live DOM from `chrome://inspect` while editing `assets/css/*.css`.
-- **Send a URL from adb:**
+Everyday tasks are wrapped in [`scripts/aw.sh`](scripts/aw.sh) (run it with no arguments for the full list):
 
-  ```bash
-  adb shell am start -a android.intent.action.SEND -t text/plain \
-    --es android.intent.extra.TEXT "https://youtu.be/VIDEO_ID" \
-    -n com.h1rose.aweauto/.ShareActivity
-  ```
+| Command | What it does |
+|---|---|
+| `scripts/aw.sh deploy` | Build and install (with the Play Store as installer) |
+| `scripts/aw.sh dhu` / `dhu-720` | Start the [Desktop Head Unit](https://developer.android.com/training/cars/testing/dhu) to try it without a car |
+| `scripts/aw.sh send <url>` | Open a YouTube/TVer URL on the car screen |
+| `scripts/aw.sh shizuku` / `tcpip` | Start Shizuku / let aweauto restart it on its own |
+| `scripts/aw.sh mute on` | Keep videos muted while debugging (debug builds) |
+| `scripts/aw.sh e2e-map` | Map pane E2E on a real phone (see below) |
+| `scripts/aw.sh readme-shots` | Capture the README screenshots from the DHU |
+
+- **Try it without a car.** Install the DHU with `sdkmanager "extras;google;auto"`, choose **Start head unit server** in Android Auto's developer menu, then run `scripts/aw.sh dhu`.
+- **Tweak the CSS.** Debug builds enable WebView remote debugging, so you can inspect the live DOM from `chrome://inspect` (or `scripts/aw.sh devtools`) while editing `assets/css/*.css`.
+- **Map pane E2E.** With aweauto open in split view on the DHU or a car, run `scripts/aw.sh e2e-map --apps all`. It restarts aweauto several times and switches through every installed map app, and checks each time that the map comes back and that exactly one `map_input` service and one map display remain. Resizing and taps are tried by hand when run in a terminal (`--no-resize` skips that). The report goes to `build/e2e/map-*/report.md`, and the exit code is non-zero on failure.
+- **README screenshots.** Close any running DHU and run `scripts/aw.sh readme-shots` (`--only home,settings` to retake some). It starts a 1280×720 DHU; open each requested screen and press Enter. PNGs go to `docs/screenshots`.
 - **Run the tests:** `./gradlew :app:testDebugUnitTest`
 
 ## Limitations

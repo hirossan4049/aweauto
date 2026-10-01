@@ -44,6 +44,12 @@ root 化も Android Auto の改造も要りません。アプリを手動でイ�
 - 📶 **圏外に強い**
   - **TVer は再生を始めた番組を、裏で最後まで端末に保存します。** 再生リストに載っている HLS のセグメントを全部ダウンロードし、プレーヤーにはディスクから渡します。保存が済んだ番組は、トンネルや圏外でも止まりません。
   - 画質の上限（自動 / 720p / 480p / 360p）を両サイトに適用できます。YouTube の先読みを増やす設定もありますが、実験的な機能です。
+- 🗺️ **動画の横に地図アプリ**（[Shizuku](https://shizuku.rikka.app/) が必要）
+  - 本物の Google マップや Y!マップなど、スマホに入っている地図・カーナビアプリを動画の横に出して、そのまま操作できます。
+  - 左右に並べる・入れ替える・幅を変える・地図を縦長の小窓（PiP）にする、を切り替えられます。
+  - 地図アプリは自動で探して選択肢に出します。Waze は Android Auto 接続中に自分の画面を塞いでしまうので出しません。
+  - 車につないだときに Shizuku が止まっても、aweauto が自分で起動し直します（最初に一度 `scripts/aw.sh tcpip` が必要）。
+- 🧭 **車の HUD・メーターに道案内**：ナビ中の地図アプリの通知（曲がる方向・距離・道路名・到着予定）を読み、Android Auto のナビ用の仕組みで車に送ります。どこまで表示されるかは車によります。通知へのアクセスの許可が必要です。
 
 ## スクリーンショット
 
@@ -84,6 +90,7 @@ flowchart LR
 
 - Android 9 以上で、Android Auto が入っているスマホ
 - JDK 17 と Android SDK（platform 35）
+- 地図枠を使うなら：adb から起動した [Shizuku](https://shizuku.rikka.app/)（`scripts/aw.sh shizuku`）
 
 ### ビルドとインストール
 
@@ -110,18 +117,22 @@ adb install -r -i com.android.vending app/build/outputs/apk/debug/app-debug.apk
 
 ## 開発
 
-- **車なしで動作確認する**：[Desktop Head Unit](https://developer.android.com/training/cars/testing/dhu) を使います。
-  1. `sdkmanager "extras;google;auto"` でインストールします。
-  2. Android Auto の開発者メニューで「ヘッドユニットサーバーを起動」を押します。
-  3. `adb forward tcp:5277 tcp:5277 && ./desktop-head-unit` を実行します。
-- **CSS を調整する**：debug ビルドは WebView のリモートデバッグが有効です。`chrome://inspect` で実際の DOM を見ながら `assets/css/*.css` を編集できます。
-- **adb から URL を送る**：
+よく使う操作は [`scripts/aw.sh`](scripts/aw.sh) にまとめています（引数なしで一覧が出ます）。
 
-  ```bash
-  adb shell am start -a android.intent.action.SEND -t text/plain \
-    --es android.intent.extra.TEXT "https://youtu.be/VIDEO_ID" \
-    -n com.h1rose.aweauto/.ShareActivity
-  ```
+| コマンド | 内容 |
+|---|---|
+| `scripts/aw.sh deploy` | ビルドしてインストール（インストール元を Play ストアにする） |
+| `scripts/aw.sh dhu` / `dhu-720` | 車なしで試すための [Desktop Head Unit](https://developer.android.com/training/cars/testing/dhu) を起動 |
+| `scripts/aw.sh send <url>` | YouTube / TVer の URL を車の画面で開く |
+| `scripts/aw.sh shizuku` / `tcpip` | Shizuku を起動 / aweauto が自分で起動し直せるようにする |
+| `scripts/aw.sh mute on` | デバッグ中は動画をミュートにする（debug ビルド） |
+| `scripts/aw.sh e2e-map` | 地図枠の実機 E2E（下記） |
+| `scripts/aw.sh readme-shots` | README のスクリーンショットを DHU から撮る |
+
+- **車なしで動作確認する**：`sdkmanager "extras;google;auto"` で DHU を入れ、Android Auto の開発者メニューで「ヘッドユニットサーバーを起動」を押してから `scripts/aw.sh dhu` を実行します。
+- **CSS を調整する**：debug ビルドは WebView のリモートデバッグが有効です。`chrome://inspect`（または `scripts/aw.sh devtools`）で実際の DOM を見ながら `assets/css/*.css` を編集できます。
+- **地図枠の E2E**：DHU か実車で aweauto を分割表示にした状態で `scripts/aw.sh e2e-map --apps all` を実行します。aweauto の再起動と、入っている地図アプリ全部への切り替えを繰り返し、そのたびに地図が戻ること・`map_input` と地図の仮想ディスプレイが1個ずつのままなことを確かめます。サイズ変更とタップは、ターミナルから実行したときだけ手で試します（`--no-resize` で飛ばせます）。結果は `build/e2e/map-*/report.md` に出て、失敗があれば終了コードが 0 以外になります。
+- **README のスクリーンショットを撮る**：起動中の DHU を閉じてから `scripts/aw.sh readme-shots` を実行します（`--only home,settings` で撮り直す画像を限定）。1280×720 の DHU が起動するので、案内された画面を開いて Enter を押すと `docs/screenshots` に保存されます。
 - **テストを実行する**：`./gradlew :app:testDebugUnitTest`
 
 ## 制限
