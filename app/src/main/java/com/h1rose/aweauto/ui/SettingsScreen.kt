@@ -27,6 +27,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.outlined.Cast
 import androidx.compose.material.icons.outlined.Extension
+import androidx.compose.material.icons.outlined.Navigation
 import androidx.compose.material.icons.outlined.History
 import androidx.compose.material.icons.outlined.Shield
 import androidx.compose.material.icons.outlined.SignalCellularAlt
@@ -60,6 +61,7 @@ import com.h1rose.aweauto.adblock.FilterList
 import com.h1rose.aweauto.cast.CastStatus
 import com.h1rose.aweauto.cast.LoungeReceiver
 import com.h1rose.aweauto.data.Prefs
+import com.h1rose.aweauto.hud.Hud
 import com.h1rose.aweauto.data.StreamService
 import com.h1rose.aweauto.shizuku.ShizukuKeeper
 import com.h1rose.aweauto.shizuku.ShizukuState
@@ -167,6 +169,36 @@ fun SettingsScreen(onBack: (() -> Unit)?) {
                     description = "プレーヤーの先読みを約 30 秒から約 2 分に増やします。YouTube は丸ごとの先読みができません",
                     checked = prefetch,
                     onChange = { Prefs.setPrefetch(it) },
+                )
+            }
+            item { SectionLabel("HUD・メーター", Icons.Outlined.Navigation) }
+            item {
+                val hud by Prefs.hud.collectAsState()
+                SettingRow(
+                    title = "道案内を車の HUD・メーターに出す",
+                    description = "地図枠の Google マップなどでナビ中の案内 (曲がる方向・距離・到着時刻) を車に送ります。" +
+                        "どこまで表示されるかは車によります",
+                    checked = hud,
+                    onChange = { Prefs.setHud(it) },
+                )
+            }
+            item {
+                val listening by Hud.listening.collectAsState()
+                val state by Hud.state.collectAsState()
+                ActionRow(
+                    title = "通知へのアクセス",
+                    description = when {
+                        !listening -> "未許可。地図アプリのナビ通知を読むために、スマホの設定で aweauto を許可してください"
+                        state != null -> "許可済み・案内中: ${state!!.guidance.cue}"
+                        else -> "許可済み。地図アプリでナビを始めると案内を送ります"
+                    },
+                    action = "設定を開く",
+                    onClick = {
+                        context.startActivity(
+                            android.content.Intent("android.settings.ACTION_NOTIFICATION_LISTENER_SETTINGS")
+                                .addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK),
+                        )
+                    },
                 )
             }
             item { SectionLabel("拡張 (Shizuku)", Icons.Outlined.Extension) }

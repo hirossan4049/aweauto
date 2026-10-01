@@ -42,6 +42,9 @@ object Prefs {
     /** 開発用: 動画を常にミュートする (debug ビルドだけ有効) */
     private val _devMute = MutableStateFlow(false)
     val devMute: StateFlow<Boolean> = _devMute.asStateFlow()
+    /** 地図枠のアプリのナビ案内を車の HUD・メーターに送る */
+    private val _hud = MutableStateFlow(true)
+    val hud: StateFlow<Boolean> = _hud.asStateFlow()
     private val _shizukuAutoRestart = MutableStateFlow(true)
     val shizukuAutoRestart: StateFlow<Boolean> = _shizukuAutoRestart.asStateFlow()
     private val _cast = MutableStateFlow(true)
@@ -66,6 +69,7 @@ object Prefs {
         _devMute.value = com.h1rose.aweauto.BuildConfig.DEBUG && sp.getBoolean("dev_mute", false)
         ShizukuState.autoRestart = _shizukuAutoRestart.value
         _splitMap.value = sp.getBoolean("split_map", false)
+        _hud.value = sp.getBoolean("hud", true)
         _mapApp.value = sp.getString("map_app", "google") ?: "google"
         _filterLists.value = FilterList.entries.filter { sp.getBoolean(filterKey(it), it.defaultOn) }.toSet()
     }
@@ -85,6 +89,11 @@ object Prefs {
     fun setMapApp(id: String) {
         sp.edit().putString("map_app", id).apply()
         _mapApp.value = id
+    }
+
+    fun setHud(enabled: Boolean) {
+        sp.edit().putBoolean("hud", enabled).apply()
+        _hud.value = enabled
     }
 
     fun setDevMute(enabled: Boolean) {

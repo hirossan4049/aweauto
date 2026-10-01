@@ -34,7 +34,11 @@ class AweCarAppService : CarAppService() {
             }
         }
 
-        override fun onCreateScreen(intent: Intent): Screen = SurfaceScreen(carContext)
+        override fun onCreateScreen(intent: Intent): Screen {
+            // 地図枠のアプリのナビ案内を車の HUD・メーターに送る
+            HudSender(carContext, lifecycle)
+            return SurfaceScreen(carContext)
+        }
     }
 }
 

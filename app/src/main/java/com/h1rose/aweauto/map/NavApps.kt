@@ -52,22 +52,28 @@ object NavApps {
         "yahoo" to "jp.co.yahoo.android.apps.map",
     )
 
-    fun installed(context: Context): List<NativeMapApp> {
+    /** 地図・カーナビアプリのパッケージ (ナビ通知を読む対象。地図枠に出せないものも含む) */
+    fun navigationCapable(context: Context): Set<String> {
         val pm = context.packageManager
-        val candidates = linkedSetOf<String>()
+        val packages = linkedSetOf<String>()
         listOf(
             Intent(Intent.ACTION_VIEW, Uri.parse("geo:0,0?q=")),
             Intent(Intent.ACTION_VIEW, Uri.parse("google.navigation:q=")),
         ).forEach { intent ->
             pm.queryIntentActivities(intent, PackageManager.MATCH_ALL)
-                .forEach { candidates += it.activityInfo.packageName }
+                .forEach { packages += it.activityInfo.packageName }
         }
-        PREFERRED.forEach { if (isInstalled(pm, it)) candidates += it }
-        candidates -= context.packageName
-        candidates -= LOCKED_WHILE_PROJECTING
+        PREFERRED.forEach { if (isInstalled(pm, it)) packages += it }
+        packages -= context.packageName
+        return packages.filterNot { mocksLocation(pm, it) }.toSet()
+    }
+
+    fun installed(context: Context): List<NativeMapApp> {
+        val pm = context.packageManager
+        val candidates = navigationCapable(context) - LOCKED_WHILE_PROJECTING
 
         return candidates
-            .filter { pm.getLaunchIntentForPackage(it) != null && !mocksLocation(pm, it) }
+            .filter { pm.getLaunchIntentForPackage(it) != null }
             .map { NativeMapApp(it, label(pm, it)) }
             .sortedWith(compareBy({ PREFERRED.indexOf(it.packageName).let { i -> if (i < 0) Int.MAX_VALUE else i } }, { it.label }))
     }
