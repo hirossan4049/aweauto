@@ -28,18 +28,42 @@
     }, 300);
   }
 
+  var answerScheduled = false;
+  function scheduleAnswer() {
+    if (answerScheduled) return;
+    answerScheduled = true;
+    setTimeout(function () {
+      answerScheduled = false;
+      answer();
+    }, 200);
+  }
+
   answer();
-  new MutationObserver(answer).observe(document.documentElement, { childList: true, subtree: true });
+  new MutationObserver(scheduleAnswer).observe(document.documentElement, { childList: true, subtree: true });
 })();
 
 (function () {
   // 番組ページのサムネイル上の再生ボタンを自動で押す (アプリ側の読み込み画面から直接再生に入るため)
   var clicked = null;
-  setInterval(function () {
+  var scheduled = false;
+
+  function clickPlayButton() {
     var button = document.querySelector('[class*="PlayerThumbnail_playButton"]');
     if (button && clicked !== location.pathname) {
       clicked = location.pathname;
       button.click();
     }
-  }, 500);
+  }
+
+  function scheduleClick() {
+    if (scheduled) return;
+    scheduled = true;
+    setTimeout(function () {
+      scheduled = false;
+      clickPlayButton();
+    }, 150);
+  }
+
+  clickPlayButton();
+  new MutationObserver(scheduleClick).observe(document.documentElement, { childList: true, subtree: true });
 })();

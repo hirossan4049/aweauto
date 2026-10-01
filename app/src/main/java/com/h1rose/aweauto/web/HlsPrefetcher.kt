@@ -20,12 +20,12 @@ import okhttp3.Request
 import java.io.ByteArrayInputStream
 import java.io.File
 import java.io.IOException
+import java.io.InputStream
 import java.io.RandomAccessFile
 import java.security.MessageDigest
 import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.Semaphore
 import java.util.concurrent.TimeUnit
-import java.util.concurrent.locks.ReentrantLock
-import kotlin.concurrent.withLock
 
 private const val TAG = "AweHls"
 
@@ -81,18 +81,67 @@ class HlsPrefetcher(
     }
 
     private fun segment(url: String, request: WebResourceRequest): WebResourceResponse? {
-        val file = try {
-            store.fetchToCache(url, request.requestHeaders)
-        } catch (e: IOException) {
-            Log.w(TAG, "segment unavailable: $url (${e.message})")
-            return null
-        }
         val mime = if (url.endsWith(".key")) "application/octet-stream" else "video/mp2t"
         val range = request.requestHeaders.entries.firstOrNull { it.key.equals("Range", true) }?.value
-        return if (range == null) {
-            response(file.inputStream(), mime, request)
-        } else {
-            partial(file, range, mime, request)
+
+        val file = store.cachedFile(url)
+        if (file != null) {
+            return if (range == null) {
+                response(file.inputStream(), mime, request)
+            } else {
+                partial(file, range, mime, request)
+            }
+        }
+
+        if (range != null) {
+            // Range の初回要求をここで丸ごと保存完了まで待つと再生が詰まる。
+            // この要求は WebView に任せ、裏で全体を保存して次回以降に使う。
+            scope.launch { runCatching { store.fetchToCache(url, request.requestHeaders) } }
+            return null
+        }
+
+        return try {
+            response(store.streamToCache(url, request.requestHeaders), mime, request)
+        } catch (e: IOException) {
+            Log.w(TAG, "segment unavailable: $url (${e.message})")
+            null
+        }
+    }
+
+    private fun partial(file: File, range: String, mime: String, request: WebResourceRequest): WebResourceResponse {
+        val length = file.length()
+        val (startStr, endStr) = range.removePrefix("bytes=").split('-', limit = 2).let { it[0] to it.getOrElse(1) { "" } }
+        val start = startStr.toLongOrNull()?.coerceIn(0L, (length - 1).coerceAtLeast(0L)) ?: 0L
+        val end = (endStr.toLongOrNull() ?: (length - 1)).coerceAtMost(length - 1)
+        val headers = corsHeaders(request) + mapOf("Content-Range" to "bytes $start-$end/$length")
+        return WebResourceResponse(mime, null, 206, "Partial Content", headers, RangeInputStream(file, start, end))
+    }
+
+    private class RangeInputStream(file: File, start: Long, private val end: Long) : InputStream() {
+        private val raf = RandomAccessFile(file, "r")
+        private var pos = start
+
+        init {
+            raf.seek(start)
+        }
+
+        override fun read(): Int {
+            if (pos > end) return -1
+            val v = raf.read()
+            if (v >= 0) pos++
+            return v
+        }
+
+        override fun read(buffer: ByteArray, offset: Int, length: Int): Int {
+            if (pos > end) return -1
+            val max = minOf(length.toLong(), end - pos + 1).toInt()
+            val n = raf.read(buffer, offset, max)
+            if (n > 0) pos += n
+            return n
+        }
+
+        override fun close() {
+            raf.close()
         }
     }
 
@@ -140,17 +189,6 @@ class HlsPrefetcher(
 
     private fun response(body: java.io.InputStream, mime: String, request: WebResourceRequest) =
         WebResourceResponse(mime, null, 200, "OK", corsHeaders(request), body)
-
-    private fun partial(file: File, range: String, mime: String, request: WebResourceRequest): WebResourceResponse {
-        val length = file.length()
-        val (startStr, endStr) = range.removePrefix("bytes=").split('-', limit = 2).let { it[0] to it.getOrElse(1) { "" } }
-        val start = startStr.toLongOrNull() ?: 0L
-        val end = (endStr.toLongOrNull() ?: (length - 1)).coerceAtMost(length - 1)
-        val bytes = ByteArray((end - start + 1).toInt())
-        RandomAccessFile(file, "r").use { it.seek(start); it.readFully(bytes) }
-        val headers = corsHeaders(request) + mapOf("Content-Range" to "bytes $start-$end/$length")
-        return WebResourceResponse(mime, null, 206, "Partial Content", headers, ByteArrayInputStream(bytes))
-    }
 
     private fun corsHeaders(request: WebResourceRequest): Map<String, String> {
         val origin = request.requestHeaders.entries.firstOrNull { it.key.equals("Origin", true) }?.value ?: "*"
@@ -223,14 +261,72 @@ private fun Request.Builder.forwardHeaders(headers: Map<String, String>) {
 
 /** セグメントのディスクキャッシュ。上限を超えたら古いものから消す */
 class HlsCacheStore private constructor(private val dir: File) {
-    private val locks = ConcurrentHashMap<String, ReentrantLock>()
+    /**
+     * 同じセグメントを先読みとプレーヤーが同時に書かないための排他。
+     * 再生経路では WebView が別スレッド (Chrome_IOThread) でストリームを閉じたときに解放するので、
+     * 取ったスレッド以外からも解放できる Semaphore を使う (ReentrantLock だと IllegalMonitorStateException で落ちる)。
+     * URL ごとに作って消すと、古いものを待っている間に別の排他ができて二重に書くことがあるので、
+     * URL のハッシュで選ぶ固定個にして消さない。
+     */
+    private val locks = Array(LOCK_STRIPES) { Semaphore(1) }
 
-    fun fetchToCache(url: String, headers: Map<String, String>): File {
+    private fun lockFor(url: String) = locks[Math.floorMod(url.hashCode(), LOCK_STRIPES)]
+
+    fun cachedFile(url: String): File? =
+        fileFor(url).takeIf { it.exists() }?.also { it.setLastModified(System.currentTimeMillis()) }
+
+    /**
+     * 再生経路用。ネットワークから読みながらプレーヤーに渡し、同時にディスクにも書く。
+     * 最後まで読まれてから閉じられたときだけキャッシュとして残す。
+     */
+    fun streamToCache(url: String, headers: Map<String, String>): InputStream {
+        cachedFile(url)?.let { return it.inputStream() }
         val file = fileFor(url)
-        if (file.exists()) return file.also { it.setLastModified(System.currentTimeMillis()) }
-        // 先読みとプレーヤーが同じセグメントを同時に取りに行ったら、片方は待って結果を使う
-        val lock = locks.getOrPut(url) { ReentrantLock() }
-        lock.withLock {
+        val lock = lockFor(url)
+        if (!lock.tryAcquire()) {
+            // 先読み側が同じ URL を保存中なら、再生経路は待たせず WebView の通常通信へ逃がす
+            throw IOException("cache write already in progress")
+        }
+        var handedOff = false
+        try {
+            cachedFile(url)?.let { return it.inputStream() }
+            Log.d(TAG, "stream ${url.substringAfterLast('/')}")
+            val req = Request.Builder().url(url).apply { forwardHeaders(headers) }.build()
+            val res = http.newCall(req).execute()
+            if (!res.isSuccessful) {
+                res.close()
+                throw IOException("HTTP ${res.code} $url")
+            }
+            val tmp = File(dir, file.name + ".part")
+            val out = try {
+                tmp.outputStream()
+            } catch (e: IOException) {
+                res.close()
+                throw e
+            }
+            val stream = CachingInputStream(res.body!!.byteStream(), out) { complete ->
+                try {
+                    res.close()
+                    if (complete && tmp.renameTo(file)) usage.value = sizeBytes() else tmp.delete()
+                } finally {
+                    lock.release()
+                }
+            }
+            handedOff = true
+            return stream
+        } finally {
+            // ストリームを渡したら、解放はストリームを閉じたとき (CachingInputStream.close) に行う
+            if (!handedOff) lock.release()
+        }
+    }
+
+    /** 先読み用。保存し終わるまで待つ。プレーヤーが同じセグメントを保存中なら、それが終わるのを待って結果を使う */
+    fun fetchToCache(url: String, headers: Map<String, String>): File {
+        cachedFile(url)?.let { return it }
+        val file = fileFor(url)
+        val lock = lockFor(url)
+        lock.acquire()
+        try {
             if (file.exists()) return file
             Log.d(TAG, "download ${url.substringAfterLast('/')}")
             val req = Request.Builder().url(url).apply { forwardHeaders(headers) }.build()
@@ -240,9 +336,10 @@ class HlsCacheStore private constructor(private val dir: File) {
                 res.body!!.byteStream().use { input -> tmp.outputStream().use { input.copyTo(it) } }
                 if (!tmp.renameTo(file)) throw IOException("rename failed")
             }
+            return file
+        } finally {
+            lock.release()
         }
-        locks.remove(url)
-        return file
     }
 
     fun putText(url: String, text: String) = File(dir, key(url) + ".m3u8").writeText(text)
@@ -275,8 +372,38 @@ class HlsCacheStore private constructor(private val dir: File) {
         return digest.joinToString("") { "%02x".format(it) }
     }
 
+    private class CachingInputStream(
+        private val input: InputStream,
+        private val output: java.io.OutputStream,
+        private val onClose: (complete: Boolean) -> Unit,
+    ) : InputStream() {
+        private var complete = false
+        private var closed = false
+
+        override fun read(): Int {
+            val v = input.read()
+            if (v >= 0) output.write(v) else complete = true
+            return v
+        }
+
+        override fun read(buffer: ByteArray, offset: Int, length: Int): Int {
+            val n = input.read(buffer, offset, length)
+            if (n > 0) output.write(buffer, offset, n) else if (n < 0) complete = true
+            return n
+        }
+
+        override fun close() {
+            if (closed) return
+            closed = true
+            runCatching { input.close() }
+            runCatching { output.close() }
+            onClose(complete)
+        }
+    }
+
     companion object {
         const val MAX_BYTES = 2L * 1024 * 1024 * 1024
+        private const val LOCK_STRIPES = 256
 
         val http: OkHttpClient = OkHttpClient.Builder()
             .connectTimeout(15, TimeUnit.SECONDS)
@@ -295,6 +422,8 @@ class HlsCacheStore private constructor(private val dir: File) {
 
         fun get(context: Context): HlsCacheStore = instance ?: synchronized(this) {
             instance ?: HlsCacheStore(File(context.cacheDir, "hls").apply { mkdirs() }).also {
+                // 書きかけのまま落ちたときの .part を消す (まだ誰も書いていない起動時だけ消せる)
+                it.dir.listFiles { f -> f.name.endsWith(".part") }?.forEach(File::delete)
                 instance = it
                 usage.value = it.sizeBytes()
             }

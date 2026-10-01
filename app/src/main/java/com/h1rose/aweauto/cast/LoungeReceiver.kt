@@ -334,12 +334,13 @@ object LoungeReceiver {
         if (sid.isEmpty() || videoId.isEmpty()) return
         val changedVideo = videoId != state.videoId
         state = State(videoId, playerState, currentTime, duration)
-        if (changedVideo) {
-            cpn = randomString(16)
-            send(nowPlaying(), stateChange())
-        } else {
-            send(stateChange())
+        if (changedVideo) cpn = randomString(16)
+        // スマホがつながっていなければ送らない (再生中は数秒ごとに呼ばれるので無駄な通信を減らす)。
+        // つながったときは remoteConnected / loungeStatus で今の状態をまとめて送る
+        if (_status.value.remotes.isNotEmpty()) {
+            if (changedVideo) send(nowPlaying(), stateChange()) else send(stateChange())
         }
+        // 次の動画への自動再生は、スマホがつながっていなくても続ける
         if (playerState == 0) videoIds.getOrNull(currentIndex + 1)?.let { currentIndex++; startVideo(it, 0.0) }
     }
 

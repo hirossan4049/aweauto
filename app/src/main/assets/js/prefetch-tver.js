@@ -12,17 +12,29 @@
   function apply() {
     var el = document.querySelector('.video-js');
     var player = el && el.player;
-    if (!player) return;
+    if (!player) return false;
     var vhs;
-    try { vhs = player.tech({ IWillNotUseThisInPlugins: true }).vhs; } catch (e) { return; }
-    if (!vhs || applied.has(vhs) || !vhs.representations) return;
+    try { vhs = player.tech({ IWillNotUseThisInPlugins: true }).vhs; } catch (e) { return false; }
+    if (!vhs || applied.has(vhs) || !vhs.representations) return false;
     applied.add(vhs);
     if (cfg.maxHeight) {
       var reps = vhs.representations();
       var allowed = reps.filter(function (r) { return r.height <= cfg.maxHeight; });
       if (allowed.length) reps.forEach(function (r) { r.enabled(r.height <= cfg.maxHeight); });
     }
+    return true;
   }
 
-  setInterval(apply, 1000);
+  var scheduled = false;
+  function scheduleApply() {
+    if (scheduled) return;
+    scheduled = true;
+    setTimeout(function () {
+      scheduled = false;
+      apply();
+    }, 200);
+  }
+
+  apply();
+  new MutationObserver(scheduleApply).observe(document.documentElement, { childList: true, subtree: true });
 })();

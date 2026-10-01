@@ -37,8 +37,9 @@
     return json.apply(this, arguments).then(prune);
   };
 
-  // 取りこぼした広告は最後まで飛ばしてスキップボタンを押す
-  setInterval(function () {
+  // 取りこぼした広告は最後まで飛ばしてスキップボタンを押す。
+  // 常時 300ms で DOM を探すと再生中も負荷になるので、DOM 変化時を主にして低頻度の保険だけ残す。
+  function skipVisibleAd() {
     var player = document.querySelector('.html5-video-player');
     if (!player || !player.classList.contains('ad-showing')) return;
     var v = player.querySelector('video');
@@ -48,5 +49,17 @@
     }
     var skip = document.querySelector('.ytp-ad-skip-button, .ytp-ad-skip-button-modern, .ytp-skip-ad-button');
     if (skip) skip.click();
-  }, 300);
+  }
+
+  var scheduled = false;
+  function scheduleSkip() {
+    if (scheduled) return;
+    scheduled = true;
+    setTimeout(function () {
+      scheduled = false;
+      skipVisibleAd();
+    }, 120);
+  }
+  new MutationObserver(scheduleSkip).observe(document.documentElement, { childList: true, subtree: true, attributes: true, attributeFilter: ['class'] });
+  setInterval(skipVisibleAd, 1500);
 })();
