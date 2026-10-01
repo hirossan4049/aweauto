@@ -28,8 +28,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material.icons.outlined.Cast
-import androidx.compose.material.icons.outlined.Map
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -129,7 +127,7 @@ private fun TopBar(tab: HomeTab, onTab: (HomeTab) -> Unit) = BoxWithConstraints 
             contentAlignment = Alignment.Center,
         ) {
             Icon(
-                Icons.Outlined.Map,
+                AweIcons.Map,
                 contentDescription = "地図と並べる",
                 tint = if (split) AweColors.OnChip else AweColors.OnSurface,
                 modifier = Modifier.size(20.dp),
@@ -140,7 +138,7 @@ private fun TopBar(tab: HomeTab, onTab: (HomeTab) -> Unit) = BoxWithConstraints 
             Modifier.pressScale { AweNav.go(Route.Pair) }.size(36.dp).clip(CircleShape).background(AweColors.SurfaceHigh),
             contentAlignment = Alignment.Center,
         ) {
-            Icon(Icons.Outlined.Cast, contentDescription = "スマホからキャスト", tint = AweColors.OnSurface, modifier = Modifier.size(20.dp))
+            Icon(AweIcons.Cast, contentDescription = "スマホからキャスト", tint = AweColors.OnSurface, modifier = Modifier.size(20.dp))
         }
         Spacer(Modifier.width(10.dp))
         Box(

@@ -162,7 +162,7 @@ aweauto は特定のサービス専用ではありません。サイトの追加
 scripts/aw.sh deploy
 ```
 
-<sub>中身は <code>./gradlew :app:assembleDebug</code> と <code>adb install -r -i com.android.vending app/build/outputs/apk/debug/app-debug.apk</code> です。</sub>
+<sub>中身は <code>./gradlew :app:assembleDebug</code> と <code>adb install -r -i com.android.vending app/build/outputs/apk/debug/app-debug.apk</code> です。ふだん使いなら、圧縮した release ビルド（約 3MB）を入れる <code>scripts/aw.sh release</code> がおすすめです。</sub>
 
 **2. Android Auto で許可する**：Android Auto の設定で「バージョン」を10回タップします。次に ⋮ →「デベロッパー向けの設定」→「提供元不明のアプリ」を ON にします。車につなぎ直すと、ランチャーに **aweauto** が出ます。
 

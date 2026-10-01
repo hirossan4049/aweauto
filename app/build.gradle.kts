@@ -18,7 +18,10 @@ android {
 
     buildTypes {
         release {
-            isMinifyEnabled = false
+            // 不要なコードとリソースを消して APK を小さくする (消されては困るものは proguard-rules.pro)
+            isMinifyEnabled = true
+            isShrinkResources = true
+            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
             // 個人用サイドロード前提なので debug 鍵で署名しておく
             signingConfig = signingConfigs.getByName("debug")
         }
@@ -59,7 +62,6 @@ dependencies {
     // Shizuku が止まったときに、スマホ内の adb (localhost:5555) から起動し直す
     implementation("dev.mobile:dadb:2.0.0")
     implementation("androidx.sharetarget:sharetarget:1.2.0")
-    implementation("androidx.compose.material:material-icons-extended")
     implementation("io.coil-kt.coil3:coil-compose:3.0.4")
     implementation("io.coil-kt.coil3:coil-network-okhttp:3.0.4")
 

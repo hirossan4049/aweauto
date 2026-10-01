@@ -20,12 +20,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.OpenInFull
-import androidx.compose.material.icons.outlined.OpenWith
-import androidx.compose.material.icons.outlined.PictureInPictureAlt
-import androidx.compose.material.icons.outlined.SwapHoriz
-import androidx.compose.material.icons.outlined.ViewColumn
 import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -160,7 +154,7 @@ private fun SplitDivider(layout: MapLayout, width: Dp) {
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(10.dp, Alignment.CenterVertically),
     ) {
-        ControlButton(Icons.Outlined.SwapHoriz, "入れ替え") { MapLayouts.swap() }
+        ControlButton(AweIcons.SwapHoriz, "入れ替え") { MapLayouts.swap() }
         // つまみ
         Box(
             Modifier
@@ -184,7 +178,7 @@ private fun SplitDivider(layout: MapLayout, width: Dp) {
                     .background(AweColors.Chip)
             )
         }
-        ControlButton(Icons.Outlined.PictureInPictureAlt, "小窓にする") { MapLayouts.togglePip() }
+        ControlButton(AweIcons.PictureInPictureAlt, "小窓にする") { MapLayouts.togglePip() }
     }
 }
 
@@ -207,10 +201,10 @@ private fun PipControls(small: PaneRect, h: Dp, layout: MapLayout) {
         horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        ControlButton(Icons.Outlined.OpenWith, "隅を移動", small = true) { MapLayouts.cyclePipCorner() }
-        ControlButton(Icons.Outlined.SwapHoriz, "入れ替え", small = true) { MapLayouts.swap() }
-        ControlButton(Icons.Outlined.OpenInFull, "大きさ", small = true) { MapLayouts.cyclePipScale() }
-        ControlButton(Icons.Outlined.ViewColumn, "左右に並べる", small = true) { MapLayouts.togglePip() }
+        ControlButton(AweIcons.OpenWith, "隅を移動", small = true) { MapLayouts.cyclePipCorner() }
+        ControlButton(AweIcons.SwapHoriz, "入れ替え", small = true) { MapLayouts.swap() }
+        ControlButton(AweIcons.OpenInFull, "大きさ", small = true) { MapLayouts.cyclePipScale() }
+        ControlButton(AweIcons.ViewColumn, "左右に並べる", small = true) { MapLayouts.togglePip() }
     }
 }
 

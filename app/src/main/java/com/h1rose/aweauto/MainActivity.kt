@@ -16,8 +16,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.DirectionsCar
-import androidx.compose.material.icons.outlined.PlayCircle
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
@@ -31,6 +29,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.h1rose.aweauto.ui.AweColors
+import com.h1rose.aweauto.ui.AweIcons
 import com.h1rose.aweauto.ui.AweTheme
 import com.h1rose.aweauto.ui.SettingsScreen
 
@@ -74,14 +73,14 @@ private fun PhoneHeader(modifier: Modifier = Modifier) {
         contentAlignment = Alignment.Center,
     ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Icon(Icons.Outlined.DirectionsCar, contentDescription = null, tint = AweColors.OnSurface, modifier = Modifier.size(38.dp))
+            Icon(AweIcons.DirectionsCar, contentDescription = null, tint = AweColors.OnSurface, modifier = Modifier.size(38.dp))
             Spacer(Modifier.height(10.dp))
             Text("車載画面は Android Auto 側に表示中", color = AweColors.OnSurface, fontSize = 18.sp, fontWeight = FontWeight.SemiBold)
             Spacer(Modifier.height(4.dp))
             Text("スマホ側は軽量な設定画面だけを表示します", color = AweColors.OnSurfaceDim, fontSize = 13.sp)
             Spacer(Modifier.height(14.dp))
             androidx.compose.foundation.layout.Row {
-                Icon(Icons.Outlined.PlayCircle, contentDescription = null, tint = AweColors.OnSurfaceDim, modifier = Modifier.size(18.dp))
+                Icon(AweIcons.PlayCircle, contentDescription = null, tint = AweColors.OnSurfaceDim, modifier = Modifier.size(18.dp))
                 Spacer(Modifier.size(6.dp))
                 Icon(Icons.Outlined.Settings, contentDescription = null, tint = AweColors.OnSurfaceDim, modifier = Modifier.size(18.dp))
             }

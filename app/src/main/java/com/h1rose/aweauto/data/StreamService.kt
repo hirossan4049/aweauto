@@ -2,11 +2,9 @@ package com.h1rose.aweauto.data
 
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Home
-import androidx.compose.material.icons.outlined.Leaderboard
-import androidx.compose.material.icons.outlined.MusicNote
-import androidx.compose.material.icons.outlined.Subscriptions
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import com.h1rose.aweauto.ui.AweIcons
 
 enum class UserAgentKind { MOBILE, DESKTOP }
 
@@ -60,8 +58,8 @@ data class Shortcut(
 
 val shortcuts = listOf(
     Shortcut("ホーム", "YouTube", StreamService.YOUTUBE, "https://m.youtube.com/", Icons.Outlined.Home),
-    Shortcut("音楽", "YouTube", StreamService.YOUTUBE, "https://m.youtube.com/channel/UC-9-kyTW8ZkZNDHQJ6FgpwQ", Icons.Outlined.MusicNote),
-    Shortcut("登録チャンネル", "YouTube", StreamService.YOUTUBE, "https://m.youtube.com/feed/subscriptions", Icons.Outlined.Subscriptions),
+    Shortcut("音楽", "YouTube", StreamService.YOUTUBE, "https://m.youtube.com/channel/UC-9-kyTW8ZkZNDHQJ6FgpwQ", AweIcons.MusicNote),
+    Shortcut("登録チャンネル", "YouTube", StreamService.YOUTUBE, "https://m.youtube.com/feed/subscriptions", AweIcons.Subscriptions),
     Shortcut("ホーム", "TVer", StreamService.TVER, "https://tver.jp/", Icons.Outlined.Home),
-    Shortcut("ランキング", "TVer", StreamService.TVER, "https://tver.jp/rankings/all", Icons.Outlined.Leaderboard),
+    Shortcut("ランキング", "TVer", StreamService.TVER, "https://tver.jp/rankings/all", AweIcons.Leaderboard),
 )

@@ -18,6 +18,8 @@ usage() {
   build              debug APK をビルド
   install            インストール (Android Auto に隠されないよう Play ストア扱いで入れる)
   deploy             build + install
+  release            小さい release ビルド (約 3MB、R8 で圧縮) をビルドしてインストール
+                     開発用の機能 (mute・地図枠のテスト表示) と run-as を使うコマンドは debug でだけ動く
   logs [tag...]      aweauto 関係のログを流す (既定: Awe* と NativeAppMapPane)
 
 Shizuku
@@ -49,6 +51,12 @@ EOF
 cmd_build() { build_apk; }
 
 cmd_install() { install_apk; }
+
+cmd_release() {
+  need_device
+  (cd "$ROOT" && ./gradlew :app:assembleRelease)
+  adb install -r -i com.android.vending "$ROOT/app/build/outputs/apk/release/app-release.apk"
+}
 
 cmd_logs() {
   need_device
@@ -166,6 +174,7 @@ main() {
     build) cmd_build ;;
     install) cmd_install ;;
     deploy) cmd_build && cmd_install ;;
+    release) cmd_release ;;
     logs) cmd_logs "$@" ;;
     shizuku) cmd_shizuku ;;
     shizuku-status) cmd_shizuku_status ;;

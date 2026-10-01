@@ -162,7 +162,7 @@ Want another site? See [Adding a site](#adding-a-site).
 scripts/aw.sh deploy
 ```
 
-<sub>That runs <code>./gradlew :app:assembleDebug</code>, then <code>adb install -r -i com.android.vending app/build/outputs/apk/debug/app-debug.apk</code>.</sub>
+<sub>That runs <code>./gradlew :app:assembleDebug</code>, then <code>adb install -r -i com.android.vending app/build/outputs/apk/debug/app-debug.apk</code>. For everyday use, <code>scripts/aw.sh release</code> installs the minified release build instead (about 3 MB).</sub>
 
 **2. Allow it in Android Auto.** In Android Auto settings, tap **Version** 10 times. Then open ⋮ → **Developer settings** and turn on **Unknown sources**. Reconnect to the car, and **aweauto** appears in the launcher.
 

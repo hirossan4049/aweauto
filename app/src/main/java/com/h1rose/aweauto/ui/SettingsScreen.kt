@@ -25,13 +25,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.outlined.Cast
-import androidx.compose.material.icons.outlined.Extension
-import androidx.compose.material.icons.outlined.Navigation
-import androidx.compose.material.icons.outlined.History
-import androidx.compose.material.icons.outlined.Shield
-import androidx.compose.material.icons.outlined.SignalCellularAlt
-import androidx.compose.material.icons.outlined.Tune
 import androidx.compose.material3.Icon
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.material3.Switch
@@ -113,7 +106,7 @@ fun SettingsScreen(onBack: (() -> Unit)?) {
             contentPadding = PaddingValues(start = 24.dp, end = 24.dp, bottom = 24.dp),
             verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
-            item { SectionLabel("表示の最適化", Icons.Outlined.Tune) }
+            item { SectionLabel("表示の最適化", AweIcons.Tune) }
             items(StreamService.entries) { service ->
                 SettingRow(
                     title = "${service.label} を車の画面向けに最適化",
@@ -122,7 +115,7 @@ fun SettingsScreen(onBack: (() -> Unit)?) {
                     onChange = { Prefs.setOptimized(service, it) },
                 )
             }
-            item { SectionLabel("スマホからキャスト", Icons.Outlined.Cast) }
+            item { SectionLabel("スマホからキャスト", AweIcons.Cast) }
             item {
                 SettingRow(
                     title = "YouTube アプリからのキャストを受ける",
@@ -134,7 +127,7 @@ fun SettingsScreen(onBack: (() -> Unit)?) {
             if (cast) {
                 item { PairingCard(castStatus) }
             }
-            item { SectionLabel("通信と先読み", Icons.Outlined.SignalCellularAlt) }
+            item { SectionLabel("通信と先読み", AweIcons.SignalCellularAlt) }
             item {
                 ChoiceRow(
                     title = "画質の上限",
@@ -171,7 +164,7 @@ fun SettingsScreen(onBack: (() -> Unit)?) {
                     onChange = { Prefs.setPrefetch(it) },
                 )
             }
-            item { SectionLabel("HUD・メーター", Icons.Outlined.Navigation) }
+            item { SectionLabel("HUD・メーター", AweIcons.Navigation) }
             item {
                 val hud by Prefs.hud.collectAsState()
                 SettingRow(
@@ -201,7 +194,7 @@ fun SettingsScreen(onBack: (() -> Unit)?) {
                     },
                 )
             }
-            item { SectionLabel("拡張 (Shizuku)", Icons.Outlined.Extension) }
+            item { SectionLabel("拡張 (Shizuku)", AweIcons.Extension) }
             item {
                 val navApps = remember { NavApps.installed(context) }
                 val selectedApp = remember(mapApp) { NavApps.resolve(context, mapApp) }
@@ -287,7 +280,7 @@ fun SettingsScreen(onBack: (() -> Unit)?) {
                     )
                 }
             }
-            item { SectionLabel("広告ブロック", Icons.Outlined.Shield) }
+            item { SectionLabel("広告ブロック", AweIcons.Shield) }
             item {
                 SettingRow(
                     title = "広告ブロック",
@@ -320,7 +313,7 @@ fun SettingsScreen(onBack: (() -> Unit)?) {
                     )
                 }
             }
-            item { SectionLabel("履歴", Icons.Outlined.History) }
+            item { SectionLabel("履歴", AweIcons.History) }
             item {
                 ActionRow(
                     title = "再生履歴を消去",
