@@ -92,6 +92,10 @@ private const val MUTE_SCRIPT = """
   ['loadedmetadata', 'play', 'playing', 'volumechange'].forEach(function (t) {
     document.addEventListener(t, mute, true);
   });
+  // YouTube の「ミュート中」バッジは、ふだん (ミュートなし) の見た目と違うので隠す (スクリーンショットでも出さない)
+  var style = document.createElement('style');
+  style.textContent = '.ytp-unmute { display: none !important; }';
+  (document.head || document.documentElement).appendChild(style);
 })();
 """
 
