@@ -225,6 +225,15 @@ fun SettingsScreen(onBack: (() -> Unit)?) {
             }
             if (BuildConfig.DEBUG) {
                 item {
+                    val mute by Prefs.devMute.collectAsState()
+                    SettingRow(
+                        title = "動画をミュートする (開発用)",
+                        description = "DHU での確認中に音を出さないようにします",
+                        checked = mute,
+                        onChange = { Prefs.setDevMute(it) },
+                    )
+                }
+                item {
                     val provider by MapPanes.provider.collectAsState()
                     SettingRow(
                         title = "地図枠にテスト表示を出す (開発用)",

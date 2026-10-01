@@ -21,8 +21,11 @@ class SiteTweaks(
     optimize: Boolean,
     adblock: Boolean,
     playback: PlaybackConfig,
+    /** 開発用: 動画を常にミュートする (DHU で毎回音が出ないように) */
+    mute: Boolean = false,
 ) {
     private val script: String = buildString {
+        if (mute) append(MUTE_SCRIPT).append('\n')
         if (playback.maxHeight > 0 || playback.readaheadSec > 0) {
             append("window.__aweautoConfig = ")
             append(JSONObject().put("maxHeight", playback.maxHeight).put("readaheadSec", playback.readaheadSec))
@@ -82,6 +85,16 @@ class SiteTweaks(
 }
 
 /** 通信が不安定な車内向けの再生設定。0 は「サイトに任せる」 */
+private const val MUTE_SCRIPT = """
+(function () {
+  window.__aweautoMute = true;
+  function mute(e) { if (e.target instanceof HTMLMediaElement && !e.target.muted) e.target.muted = true; }
+  ['loadedmetadata', 'play', 'playing', 'volumechange'].forEach(function (t) {
+    document.addEventListener(t, mute, true);
+  });
+})();
+"""
+
 data class PlaybackConfig(val maxHeight: Int, val readaheadSec: Int)
 
 private fun Context.assetOrEmpty(path: String): String =

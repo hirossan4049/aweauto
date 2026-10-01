@@ -159,9 +159,10 @@ fun WebScreen(route: Route.Web) {
     val maxHeight by Prefs.maxHeight.collectAsState()
     val prefetch by Prefs.prefetch.collectAsState()
     val tverOffline by Prefs.tverOffline.collectAsState()
+    val devMute by Prefs.devMute.collectAsState()
     val playback = PlaybackConfig(maxHeight = maxHeight, readaheadSec = if (prefetch) READAHEAD_SEC else 0)
     // 設定を切り替えたら WebView ごと作り直す (注入済みスクリプトを外す API が無いため)
-    val key = listOf(optimized, adblock, playback, tverOffline)
+    val key = listOf(optimized, adblock, playback, tverOffline, devMute)
     val context = LocalContext.current
     val session = remember(route, key) {
         sessions[route]?.takeIf { it.key == key } ?: run {
@@ -175,6 +176,7 @@ fun WebScreen(route: Route.Web) {
                 adblock,
                 playback,
                 tverOffline,
+                devMute,
                 onFullscreen = { created.fullscreen = it },
                 onUrl = { created.currentUrl = it },
                 onVideoPlaying = {
@@ -291,13 +293,14 @@ private fun createWebView(
     adblock: Boolean,
     playback: PlaybackConfig,
     tverOffline: Boolean,
+    mute: Boolean,
     onFullscreen: (Pair<View, WebChromeClient.CustomViewCallback>?) -> Unit,
     onUrl: (String) -> Unit,
     onVideoPlaying: () -> Unit,
     onVideoPaused: () -> Unit,
 ): WebView {
     val service = route.service
-    val tweaks = SiteTweaks(ctx, service, optimize = optimized, adblock = adblock, playback = playback)
+    val tweaks = SiteTweaks(ctx, service, optimize = optimized, adblock = adblock, playback = playback, mute = mute)
     val hls = if (service == StreamService.TVER && tverOffline) HlsPrefetcher(ctx, playback.maxHeight) else null
     val cookies = CookieManager.getInstance()
     if (optimized && service == StreamService.YOUTUBE) {

@@ -5,6 +5,7 @@
   var unmutedSrc = null;
   document.addEventListener('playing', function (e) {
     var v = e.target;
+    if (window.__aweautoMute) return;
     if (!(v instanceof HTMLVideoElement) || !v.muted || unmutedSrc === v.src) return;
     unmutedSrc = v.src;
     var button = document.querySelector('.ytp-unmute');

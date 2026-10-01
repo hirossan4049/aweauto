@@ -40,6 +40,9 @@ Shizuku
   send <url>         YouTube / TVer の URL を車の画面で開く (共有と同じ)
   devtools           WebView の DevTools を localhost:9333 に転送 (chrome://inspect でも可)
 
+開発用
+  mute [on|off]      debug ビルドで動画を常にミュート (DHU で音を出さない)。aweauto を再起動して反映
+
 端末の設定 (元に戻す: 各コマンドに off)
   resizable [on|off] 分割非対応アプリも地図枠に出せるようにする (force_resizable_activities)
 EOF
@@ -166,6 +169,16 @@ cmd_devtools() {
   echo "http://localhost:9333/json で WebView の一覧が見られます"
 }
 
+cmd_mute() {
+  need_device
+  local v
+  case "${1:-on}" in on) v=true ;; off) v=false ;; *) echo "on か off を指定してください" >&2; exit 1 ;; esac
+  local f=shared_prefs/aweauto.xml
+  adb_ shell "run-as $PKG sh -c 'grep -q dev_mute $f && sed -i \"s#<boolean name=\\\"dev_mute\\\" value=\\\"[a-z]*\\\" />#<boolean name=\\\"dev_mute\\\" value=\\\"$v\\\" />#\" $f || sed -i \"s#</map>#    <boolean name=\\\"dev_mute\\\" value=\\\"$v\\\" />\\n</map>#\" $f'"
+  adb_ shell am force-stop "$PKG"
+  echo "dev_mute = $v (aweauto を再起動しました。車の画面で開き直してください)"
+}
+
 cmd_resizable() {
   need_device
   case "${1:-on}" in
@@ -193,6 +206,7 @@ main() {
     send) cmd_send "$@" ;;
     devtools) cmd_devtools ;;
     resizable) cmd_resizable "$@" ;;
+    mute) cmd_mute "$@" ;;
     help | -h | --help) usage ;;
     *) echo "不明なコマンド: $cmd" >&2; usage; exit 1 ;;
   esac

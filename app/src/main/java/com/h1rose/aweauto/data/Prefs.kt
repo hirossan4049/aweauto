@@ -39,6 +39,9 @@ object Prefs {
     val splitMap: StateFlow<Boolean> = _splitMap.asStateFlow()
     private val _mapApp = MutableStateFlow("google")
     val mapApp: StateFlow<String> = _mapApp.asStateFlow()
+    /** 開発用: 動画を常にミュートする (debug ビルドだけ有効) */
+    private val _devMute = MutableStateFlow(false)
+    val devMute: StateFlow<Boolean> = _devMute.asStateFlow()
     private val _shizukuAutoRestart = MutableStateFlow(true)
     val shizukuAutoRestart: StateFlow<Boolean> = _shizukuAutoRestart.asStateFlow()
     private val _cast = MutableStateFlow(true)
@@ -60,6 +63,7 @@ object Prefs {
         _tverOffline.value = sp.getBoolean("tver_offline", true)
         _cast.value = sp.getBoolean("cast", true)
         _shizukuAutoRestart.value = sp.getBoolean("shizuku_auto_restart", true)
+        _devMute.value = com.h1rose.aweauto.BuildConfig.DEBUG && sp.getBoolean("dev_mute", false)
         ShizukuState.autoRestart = _shizukuAutoRestart.value
         _splitMap.value = sp.getBoolean("split_map", false)
         _mapApp.value = sp.getString("map_app", "google") ?: "google"
@@ -81,6 +85,11 @@ object Prefs {
     fun setMapApp(id: String) {
         sp.edit().putString("map_app", id).apply()
         _mapApp.value = id
+    }
+
+    fun setDevMute(enabled: Boolean) {
+        sp.edit().putBoolean("dev_mute", enabled).apply()
+        _devMute.value = enabled
     }
 
     fun setShizukuAutoRestart(enabled: Boolean) {
