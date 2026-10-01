@@ -4,6 +4,7 @@ import android.app.Presentation
 import android.content.Context
 import android.os.Bundle
 import android.view.Display
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.LocalDensity
@@ -58,10 +59,11 @@ class CarPresentation(
     }
 
     @androidx.compose.runtime.Composable
-    private fun CarContent() {
+    private fun CarContent() = BoxWithConstraints {
         val metrics = context.resources.displayMetrics
-        // 横幅がおよそ 760dp 以上になるように密度を抑える (小さい車載画面で UI がはみ出さないように)
-        val density = minOf(metrics.density, metrics.widthPixels / 760f)
+        // 横幅がおよそ 760dp 以上になるように密度を抑える (小さい車載画面で UI がはみ出さないように)。
+        // 画面の大きさは Android Auto の表示の仕方で変わるので、実際の幅から毎回計算する
+        val density = minOf(metrics.density, constraints.maxWidth / 760f)
         CompositionLocalProvider(
             LocalDensity provides Density(density, fontScale = 1f),
             // 右上には Android Auto の「戻る」ボタンが重なる (数秒で自動的に隠れる)
@@ -71,6 +73,13 @@ class CarPresentation(
             AweRoot()
         }
     }
+
+    /**
+     * Presentation は表示先の大きさが変わると自分で閉じてしまう (cancel)。
+     * 車の画面は表示の仕方で大きさが変わるたびに作り直さず使い続けたいので、自動で閉じるのは無視する。
+     * 閉じるときは [dismiss] を直接呼ぶ。
+     */
+    override fun cancel() = Unit
 
     override fun onStart() {
         super.onStart()
