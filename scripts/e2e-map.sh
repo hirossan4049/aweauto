@@ -4,7 +4,7 @@
 #   scripts/e2e-map.sh [--deploy] [--rounds 3] [--apps all|pkg,...] [--cleanup] [--out dir]
 #
 # 確認するもの:
-# - 地図アプリが地図枠に出ること (ログの「remote map display attached」で判定)
+# - 地図アプリが地図枠に出ること (地図枠の仮想ディスプレイにそのアプリの画面があるかで判定)
 # - 分割/PiP・幅変更・タップで落ちないこと (この操作だけは手で行う)
 # - aweauto を再起動しても com.h1rose.aweauto:map_input と仮想ディスプレイが 1 個のままなこと
 # - --apps: 地図アプリを切り替えても、それぞれ地図枠に起動できること
@@ -23,7 +23,6 @@ ATTACH_TIMEOUT=30
 # 出たら失敗とみなすログ。「Display removed」は aweauto を止めたときにも出るので、サイズ変更のステップでだけ見る
 BAD_LOG='FATAL EXCEPTION|ANR in com\.h1rose\.aweauto|remote attach failed|no input forwarder|Error: Activity not started|launch map failed'
 LAUNCH_FAILED_LOG='Error: Activity not started|launch map failed'
-ATTACHED_LOG='remote map display attached'
 
 usage() {
   cat <<'EOF'
@@ -72,13 +71,13 @@ record() {
 
 # 地図枠に出るまで待つ。出なければ手で開いてもらってもう一度待つ
 wait_attached() {
-  local step="$1" pattern="${2:-$ATTACHED_LOG}"
-  if wait_log "$pattern" "$ATTACH_TIMEOUT"; then
+  local step="$1" pkg="${2:-}" old_id="${3:-}"
+  if wait_map_shown "$pkg" "$ATTACH_TIMEOUT" "$old_id"; then
     return 0
   fi
   if [ -t 0 ]; then
     read -r -p "地図が出ません。車の画面で aweauto を開いてから Enter: " _
-    wait_log "$pattern" "$ATTACH_TIMEOUT" && return 0
+    wait_map_shown "$pkg" "$ATTACH_TIMEOUT" "$old_id" && return 0
   fi
   echo "$step: 地図枠に表示されませんでした" >&2
   return 1
@@ -95,10 +94,11 @@ check_counts() {
 }
 
 restart_and_check() {
-  local step="$1"
+  local step="$1" old_id
+  old_id="$(map_display_id)"
   adb logcat -c
   adb shell am force-stop "$PKG"
-  if wait_attached "$step"; then
+  if wait_attached "$step" "" "$old_id"; then
     sleep 2 # 古いサービスが destroy されるまで少し待つ
     check_counts "$step"
   else
@@ -122,12 +122,13 @@ installed_map_apps() {
 }
 
 check_app() {
-  local app="$1" step="app-$1"
+  local app="$1" step="app-$1" old_id
+  old_id="$(map_display_id)"
   adb logcat -c
   # 書き換えてから止める (止めた直後に Android Auto が開き直すので、後から書くと間に合わないことがある)
   set_pref_string map_app "$app" >/dev/null
   adb shell am force-stop "$PKG"
-  if wait_attached "$step" "attached virtual display .*package=$app"; then
+  if wait_attached "$step" "$app" "$old_id"; then
     sleep 2
     if adb logcat -d | grep -qE "$LAUNCH_FAILED_LOG"; then
       record "$step" FAIL "$app を起動できない"

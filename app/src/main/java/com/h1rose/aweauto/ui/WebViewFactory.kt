@@ -5,6 +5,7 @@ import android.content.MutableContextWrapper
 import android.graphics.Bitmap
 import android.view.View
 import android.view.ViewGroup
+import android.webkit.ConsoleMessage
 import android.webkit.CookieManager
 import android.webkit.JavascriptInterface
 import android.webkit.PermissionRequest
@@ -108,6 +109,11 @@ internal fun createWebView(
                 val id = youtubeVideoId(view.url) ?: return
                 Prefs.recordWatch(id, title?.removeSuffix(" - YouTube"))
             }
+
+            // ページのコンソール出力 (TVer の計測の CORS エラーなど、長い URL 付きで数秒ごとに出る) を
+            // 端末のログに流さない。流すと Android がアプリのログをまとめて捨てるほど多い。
+            // ページのコンソールは DevTools (scripts/aw.sh devtools) で見られる
+            override fun onConsoleMessage(message: ConsoleMessage): Boolean = true
 
             // 再生前に出る灰色の「動画」アイコンを透明にする
             override fun getDefaultVideoPoster(): Bitmap =

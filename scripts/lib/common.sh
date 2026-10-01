@@ -58,6 +58,36 @@ set_pref_string() {
   adb shell "run-as $PKG sh -c 'grep -q \"name=\\\"$key\\\"\" $f && sed -i \"s#<string name=\\\"$key\\\">[^<]*</string>#<string name=\\\"$key\\\">$value</string>#\" $f || sed -i \"s#</map>#    <string name=\\\"$key\\\">$value</string>\\n</map>#\" $f'"
 }
 
+# 地図枠の仮想ディスプレイで動いているアプリのパッケージ (無ければ空)。
+# ログは同じアプリ ID のログが多いと Android に捨てられることがあるので、端末の状態から直接見る
+map_display_id() {
+  adb shell dumpsys display 2>/dev/null | tr -d '\r' |
+    awk -v name="$MAP_VD_NAME" '/^  Display [0-9]+:/ { d = $2 } $0 ~ "mBaseDisplayInfo=DisplayInfo\\{\"" name "\"" { sub(":", "", d); print d; exit }'
+}
+
+map_display_package() {
+  local id="${1:-$(map_display_id)}"
+  [ -z "$id" ] && return 0
+  adb shell dumpsys activity activities 2>/dev/null | tr -d '\r' |
+    awk -v id="#$id" '/^Display #/ { on = ($2 == id) } on && /TaskRecord\{/ { for (i = 1; i <= NF; i++) if ($i ~ /^A=/) { sub("A=", "", $i); print $i; exit } }'
+}
+
+# 地図枠に pkg (省略なら何でも) が出るまで待つ (出たら 0、timeout 秒で 1)。
+# old_id を渡すと、そのディスプレイ (再起動前のもの) ではない新しい地図枠を待つ
+wait_map_shown() {
+  local pkg="${1:-}" timeout="${2:-30}" old_id="${3:-}" i id shown
+  for i in $(seq 1 "$timeout"); do
+    id="$(map_display_id)"
+    shown=""
+    [ -n "$id" ] && [ "$id" != "$old_id" ] && shown="$(map_display_package "$id")"
+    if [ -n "$shown" ] && { [ -z "$pkg" ] || [ "$shown" = "$pkg" ]; }; then
+      return 0
+    fi
+    sleep 1
+  done
+  return 1
+}
+
 # ---- Desktop Head Unit ----
 
 need_dhu() {
