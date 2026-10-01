@@ -61,6 +61,7 @@ English | [日本語](README.ja.md)
 | <img src="docs/screenshots/youtube-search.png" alt="YouTube search"> YouTube search, 3-column grid | <img src="docs/screenshots/youtube-player.png" alt="YouTube player"> YouTube, immersive player |
 | <img src="docs/screenshots/loading.png" alt="Loading cover"> Loading cover | <img src="docs/screenshots/settings.png" alt="Settings"> Settings |
 | <img src="docs/screenshots/tver-home.png" alt="TVer home"> TVer (dark theme) | <img src="docs/screenshots/tver-player.png" alt="TVer player"> TVer, full-bleed player |
+| <img src="docs/screenshots/map-split.png" alt="Map split"> Google Maps beside the video | <img src="docs/screenshots/map-pip.png" alt="Map picture-in-picture"> Map as a portrait picture-in-picture |
 
 <sub>Screenshots were taken on the Android Auto Desktop Head Unit at 1280×720. The videos shown are from [ダイアン公式チャンネル](https://www.youtube.com/@daian_youandtube) and TVer.</sub>
 

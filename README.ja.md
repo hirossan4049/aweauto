@@ -59,6 +59,7 @@ root 化も Android Auto の改造も要りません。アプリを手動でイ�
 | <img src="docs/screenshots/youtube-search.png" alt="YouTube 検索"> YouTube 検索（3列グリッド） | <img src="docs/screenshots/youtube-player.png" alt="YouTube 再生"> YouTube（再生中は動画だけ表示） |
 | <img src="docs/screenshots/loading.png" alt="読み込み中"> 読み込み中の画面 | <img src="docs/screenshots/settings.png" alt="設定"> 設定 |
 | <img src="docs/screenshots/tver-home.png" alt="TVer ホーム"> TVer（ダークテーマ） | <img src="docs/screenshots/tver-player.png" alt="TVer 再生"> TVer（画面いっぱいに再生） |
+| <img src="docs/screenshots/map-split.png" alt="地図と並べて表示"> 動画の横に Google マップ | <img src="docs/screenshots/map-pip.png" alt="地図を小窓に"> 地図を縦長の小窓に |
 
 <sub>Android Auto の Desktop Head Unit（1280×720）で撮影しました。動画は [ダイアン公式チャンネル](https://www.youtube.com/@daian_youandtube) と TVer のものです。</sub>
 

@@ -22,40 +22,30 @@ SHOTS=(
   "settings|設定画面を表示してください。"
   "tver-home|TVer のホームを表示してください。"
   "tver-player|TVer の再生画面を表示してください。"
-  "map-split|地図ボタンで地図を左右に並べ、右側で動画を再生してください。"
-  "map-pip|地図を小窓 (PiP) にしてください。"
+  "map-split|地図ボタンで地図を左右に並べ、右側で動画を再生してください (地図は東京タワーを表示します)。"
+  "map-pip|地図を小窓 (PiP) にして、地図が小さい側になるよう入れ替えてください (地図は経路のプレビューを表示します)。"
 )
 
-usage() {
-  local names
-  names="$(printf '%s\n' "${SHOTS[@]}" | cut -d'|' -f1 | paste -sd, -)"
-  cat <<EOF
-使い方: scripts/readme-shots.sh [options]
-
-Options:
-  --deploy          撮影前に build + install する
-  --out <dir>       出力先 (default: docs/screenshots)
-  --only <names>    カンマ区切りで撮る画像を限定
-                    $names
-  -h, --help        ヘルプ
-
-事前準備:
-  1. Android Auto の開発者メニューで「ヘッドユニットサーバーを起動」
-  2. ほかの DHU を閉じておく (ヘッドユニットサーバーにつなげる DHU は 1 つだけ)
-  3. 地図の画像を撮るなら Shizuku を起動しておく (scripts/aw.sh shizuku)
-  ヒント: 動画のページは別のターミナルで scripts/aw.sh send <url> を使うと早い
-EOF
+# 地図の画像は、自宅のボタン・アカウントの写真・現在地が写らないように、撮る前に東京の画面を出しておく
+# (検索結果と経路の画面には自宅やアカウントが出ない)
+map_demo_url() {
+  case "$1" in
+    map-split) echo 'geo:0,0?q=東京タワー' ;;
+    map-pip) echo 'https://www.google.com/maps/dir/?api=1&origin=東京駅&destination=東京タワー&travelmode=driving' ;;
+  esac
 }
 
-while [ $# -gt 0 ]; do
-  case "$1" in
-    --deploy) DEPLOY=true; shift ;;
-    --out) OUT="$2"; shift 2 ;;
-    --only) ONLY="$2"; shift 2 ;;
-    -h | --help) usage; exit 0 ;;
-    *) echo "不明なオプション: $1" >&2; usage; exit 1 ;;
-  esac
-done
+# 地図枠 (仮想ディスプレイ) の Google マップに URL を開かせる
+show_on_map() {
+  local url="$1" display
+  display="$(adb shell dumpsys activity activities | tr -d '\r' |
+    awk '/^Display #/ { d = $2 } /TaskRecord.*A=com.google.android.apps.maps/ { sub("#", "", d); print d; exit }')"
+  if [ -z "$display" ]; then
+    echo "地図枠に Google マップが見つかりません。設定の「地図枠に出すアプリ」を Google マップにしてください" >&2
+    return 1
+  fi
+  adb shell am start --display "$display" -a android.intent.action.VIEW -d "'$url'" -p com.google.android.apps.maps >/dev/null 2>&1
+}
 
 want() {
   [ -z "$ONLY" ] || [[ ",$ONLY," == *",$1,"* ]]
@@ -87,6 +77,11 @@ main() {
     echo
     echo "== $name.png =="
     echo "$prompt"
+    if [ -n "$(map_demo_url "$name")" ]; then
+      read -r -p "地図枠が出たら Enter (地図に東京の画面を出します): " _
+      show_on_map "$(map_demo_url "$name")" || true
+      [ "$name" = map-pip ] && echo "経路が出たら、小窓の中の「プレビュー」を押すとナビ中のような画面になります。"
+    fi
     read -r -p "DHU の画面を合わせたら Enter: " _
     dhu_screenshot "$OUT/$name.png"
     echo "保存しました: $OUT/$name.png"
