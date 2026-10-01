@@ -1,69 +1,167 @@
 <div align="center">
 
+<img src="docs/logo.svg" width="88" alt="aweauto logo">
+
 # aweauto
 
-**A Google TV–style player for YouTube and TVer on Android Auto.**
+**YouTube and TVer on Android Auto, in a Google TV–style UI.**<br>
+Your real map app runs right beside the video, and its turn-by-turn goes to the car's HUD.
 
-No root. You don't modify Android Auto. It runs on any phone that can sideload an app.
+No root · Android Auto stays untouched · Just sideload one app
 
-English | [日本語](README.ja.md)
+[![Android 9+](https://img.shields.io/badge/Android-9%2B-3DDC84?style=flat-square&logo=android&logoColor=white)](#install)
+[![Kotlin](https://img.shields.io/badge/Kotlin-2.1-7F52FF?style=flat-square&logo=kotlin&logoColor=white)](app)
+[![Jetpack Compose](https://img.shields.io/badge/Jetpack%20Compose-M3-4285F4?style=flat-square&logo=jetpackcompose&logoColor=white)](app)
+[![Car App Library](https://img.shields.io/badge/Car%20App%20Library-1.4-1A73E8?style=flat-square&logo=androidauto&logoColor=white)](https://developer.android.com/training/cars/apps)
 
-![Android](https://img.shields.io/badge/Android-9%2B-3DDC84?logo=android&logoColor=white)
-![Kotlin](https://img.shields.io/badge/Kotlin-2.1-7F52FF?logo=kotlin&logoColor=white)
-![Jetpack Compose](https://img.shields.io/badge/Jetpack%20Compose-Material%203-4285F4?logo=jetpackcompose&logoColor=white)
-![Android Auto](https://img.shields.io/badge/Android%20Auto-Car%20App%20Library%201.4-1A73E8)
+[Features](#features) · [Screenshots](#screenshots) · [Install](#install) · [How it works](#how-it-works) · [Development](#development)
 
-<img src="docs/screenshots/home.png" width="720" alt="Home screen">
+English · [日本語](README.ja.md)
+
+<br>
+
+<img src="docs/hero.png" alt="aweauto on an Android Auto display: Google Maps beside a YouTube video">
 
 </div>
 
 > [!WARNING]
-> aweauto is meant for passengers, and for the driver **only while parked**. Watching video while driving is dangerous and illegal in most countries.
+> aweauto is for passengers, and for the driver **only while parked**. Watching video while driving is dangerous and illegal in most countries.
 
 ## Features
 
-- 📺 **Google TV–style home screen.** A hero banner, shelves, tabs, a clock and a history library, all designed for touch on a car display.
-- ▶️ **YouTube and TVer, tuned for the car.** Per-site CSS/JS gives you:
-  - a dark theme
-  - a 3-column grid for search results
-  - a full-bleed player
-  - automatic unmute
-  - automatic answers to TVer's pre-roll survey
-  - no Shorts, app banners or bottom tab bar
+<table>
+<tr>
+<td width="33%" valign="top">
 
-  Each site can be switched off in Settings.
-- 🕶️ **Immersive playback.** The side rail hides while a video plays. A small handle on the left edge brings it back.
-- ⏳ **Loading cover.** Until playback starts you see the thumbnail and a spinner instead of WebView's grey placeholder.
-- 📲 **Send from your phone.**
-  - *Share → "車の画面で開く"* from the YouTube or TVer app.
-  - **Cast from the official YouTube app.**
-    - On the same Wi-Fi or tethering hotspot, **aweauto (車)** appears in the cast menu automatically (DIAL). No code needed.
-    - Anywhere else, link once with *Link with TV code* (the Lounge protocol). This works over mobile data too. The code and a QR are shown on the car screen, and the phone has a copy-and-open button.
-  - "車の画面" is published as a direct-share target, so it can appear at the top of the share sheet.
-- 🛡️ **Ad blocking.**
-  - Domain rules from AdGuard DNS, EasyList and AdGuard Japanese filters, refreshed daily.
-  - YouTube video ads are stripped from the player response.
-- 📶 **Made for dead zones.**
-  - **TVer episodes are downloaded to disk in the background as you watch.** Every HLS segment listed in the playlist is fetched and then served to the player from disk. Once an episode is cached, tunnels and dead zones don't interrupt it.
-  - A quality cap (auto/720p/480p/360p) applies to both sites. *Experimental:* a larger read-ahead for YouTube.
-- 🗺️ **Your map app next to the video** *(needs [Shizuku](https://shizuku.rikka.app/))*.
-  - The real Google Maps, Yahoo! MAP or any other installed map/navigation app runs in a pane beside the video, and you can touch it.
-  - Split left/right, swap sides, drag the width, or shrink the map to a portrait picture-in-picture window.
-  - Installed map apps are found automatically. Waze is left out because it locks its own screen while Android Auto is connected.
-  - aweauto restarts Shizuku by itself if it stops when you plug into the car (after a one-time `scripts/aw.sh tcpip`).
-- 🧭 **Turn-by-turn on the car's HUD and instrument cluster.** aweauto reads the guidance notification of the map app you're navigating with (turn, distance, road, arrival time) and passes it to the car through Android Auto's navigation API. What appears depends on the car. Needs notification access.
+### 📺 Google TV–style home
+Hero banner, shelves, a watch-history library and a clock, sized for a touchscreen in the dash.
+
+</td>
+<td width="33%" valign="top">
+
+### ▶️ YouTube & TVer, tuned for the car
+Dark theme, a 3-column grid, a full-bleed player, auto-unmute. Shorts and app banners are gone.
+
+</td>
+<td width="33%" valign="top">
+
+### 📲 Cast from your phone
+Tap the cast button in the official YouTube app. You can also share any video to "車の画面".
+
+</td>
+</tr>
+<tr>
+<td valign="top">
+
+### 🗺️ Your map app, side by side
+The real Google Maps or Yahoo! MAP runs next to the video. You can touch it, resize it, swap sides or shrink it to a picture-in-picture window.
+
+</td>
+<td valign="top">
+
+### 🧭 Turn-by-turn on the HUD
+The guidance of the map app you're navigating with goes to the car's head-up display and instrument cluster.
+
+</td>
+<td valign="top">
+
+### 📶 Made for dead zones
+TVer episodes are saved to disk as you watch, so tunnels don't stop them. You can cap the quality for slow networks.
+
+</td>
+</tr>
+<tr>
+<td valign="top">
+
+### 🛡️ Ad blocking
+AdGuard DNS, EasyList and AdGuard Japanese rules, plus YouTube video ads removed from the player.
+
+</td>
+<td valign="top">
+
+### 🕶️ Immersive playback
+The side rail hides while a video plays. Until playback starts, you see the thumbnail instead of a grey box.
+
+</td>
+<td valign="top">
+
+### 🔁 Picks up where you left off
+The video and map survive camera interruptions and screen switches. Shizuku is restarted on its own after you plug in.
+
+</td>
+</tr>
+</table>
+
+<details>
+<summary><b>All the details</b></summary>
+
+- **Site tweaks.** Each site gets its own CSS/JS: a dark theme, a 3-column search grid, a full-bleed player and auto-unmute. TVer's pre-roll survey is answered for you. Shorts, app banners and the bottom tab bar are hidden. Each site can be switched off in Settings.
+- **Casting.**
+  - On the same Wi-Fi or hotspot, **aweauto (車)** shows up in the YouTube cast menu by itself (DIAL).
+  - Anywhere else, link once with *Link with TV code* (the Lounge protocol). This also works over mobile data. The code and a QR are shown on the car screen.
+  - "車の画面" is also published as a direct-share target.
+- **Ad blocking.** Domain rules from the filter lists are refreshed daily. YouTube video ads are stripped from the player response.
+- **TVer offline cache.** Every HLS segment of the episode you're watching is downloaded into a 2 GB disk cache and served to the player from there.
+- **Quality cap.** Auto, 720p, 480p or 360p, for both sites. *Experimental:* a longer read-ahead for YouTube.
+- **Map pane** *(needs [Shizuku](https://shizuku.rikka.app/))*.
+  - Any installed map or navigation app that can be opened from the home screen is offered automatically.
+  - Waze is left out, because it locks its own screen while Android Auto is connected.
+  - The PiP window is portrait (3:4). Map apps are drawn at a lower density in small panes, so they don't feel cramped.
+- **HUD and instrument cluster.**
+  - aweauto reads the navigation notification of the map app (turn, distance, road, remaining time and arrival time).
+  - It then sends that to the car through Android Auto's `NavigationManager`.
+  - What actually appears depends on the car. This needs notification access.
+
+</details>
 
 ## Screenshots
 
-| | |
-|:-:|:-:|
-| <img src="docs/screenshots/home.png" alt="Home"> Home | <img src="docs/screenshots/library.png" alt="Library"> Library (watch history) |
-| <img src="docs/screenshots/youtube-search.png" alt="YouTube search"> YouTube search, 3-column grid | <img src="docs/screenshots/youtube-player.png" alt="YouTube player"> YouTube, immersive player |
-| <img src="docs/screenshots/loading.png" alt="Loading cover"> Loading cover | <img src="docs/screenshots/settings.png" alt="Settings"> Settings |
-| <img src="docs/screenshots/tver-home.png" alt="TVer home"> TVer (dark theme) | <img src="docs/screenshots/tver-player.png" alt="TVer player"> TVer, full-bleed player |
-| <img src="docs/screenshots/map-split.png" alt="Map split"> Google Maps beside the video | <img src="docs/screenshots/map-pip.png" alt="Map picture-in-picture"> Map as a portrait picture-in-picture |
+<table>
+<tr>
+<td width="50%"><img src="docs/screenshots/home.png" alt="Home"><br><sub><b>Home</b>, with the hero banner and shelves</sub></td>
+<td width="50%"><img src="docs/screenshots/youtube-player.png" alt="YouTube player"><br><sub><b>YouTube</b>, immersive player</sub></td>
+</tr>
+<tr>
+<td><img src="docs/screenshots/map-split.png" alt="Map split"><br><sub><b>Google Maps beside the video</b>, swap sides or drag the width</sub></td>
+<td><img src="docs/screenshots/map-pip.png" alt="Map picture-in-picture"><br><sub><b>Map as a picture-in-picture window</b>, portrait</sub></td>
+</tr>
+<tr>
+<td><img src="docs/screenshots/youtube-search.png" alt="YouTube search"><br><sub><b>YouTube search</b>, 3-column grid</sub></td>
+<td><img src="docs/screenshots/library.png" alt="Library"><br><sub><b>Library</b> (watch history)</sub></td>
+</tr>
+<tr>
+<td><img src="docs/screenshots/tver-home.png" alt="TVer home"><br><sub><b>TVer</b>, dark theme</sub></td>
+<td><img src="docs/screenshots/tver-player.png" alt="TVer player"><br><sub><b>TVer</b>, full-bleed player</sub></td>
+</tr>
+<tr>
+<td><img src="docs/screenshots/loading.png" alt="Loading cover"><br><sub><b>Loading cover</b> instead of WebView's grey box</sub></td>
+<td><img src="docs/screenshots/settings.png" alt="Settings"><br><sub><b>Settings</b></sub></td>
+</tr>
+</table>
 
-<sub>Screenshots were taken on the Android Auto Desktop Head Unit at 1280×720. The videos shown are from [ダイアン公式チャンネル](https://www.youtube.com/@daian_youandtube) and TVer.</sub>
+<sub>Taken on the Android Auto Desktop Head Unit at 1280×720. Videos are from [ダイアン公式チャンネル](https://www.youtube.com/@daian_youandtube) and TVer.</sub>
+
+## Install
+
+**You need** an Android 9+ phone with Android Auto, and JDK 17 with the Android SDK (platform 35) to build.
+
+**1. Build and install.** Android Auto hides navigation apps that didn't come from the Play Store, so install with the Play Store as the installer:
+
+```bash
+scripts/aw.sh deploy
+```
+
+<sub>That runs <code>./gradlew :app:assembleDebug</code>, then <code>adb install -r -i com.android.vending app/build/outputs/apk/debug/app-debug.apk</code>.</sub>
+
+**2. Allow it in Android Auto.** In Android Auto settings, tap **Version** 10 times. Then open ⋮ → **Developer settings** and turn on **Unknown sources**. Reconnect to the car, and **aweauto** appears in the launcher.
+
+**3. Optional extras.**
+
+| For | Do this once |
+|---|---|
+| 🗺️ Map pane | Install [Shizuku](https://shizuku.rikka.app/) and start it with `scripts/aw.sh shizuku`. After that, `scripts/aw.sh tcpip` lets aweauto restart Shizuku by itself in the car. |
+| 🧭 HUD guidance | aweauto Settings → **Notification access** → allow aweauto |
+| 📲 Casting away from Wi-Fi | Tap the cast icon on the car home screen. In the YouTube app, go to **You → Settings → Watch on TV → Link with TV code** and enter the code shown. |
 
 ## How it works
 
@@ -71,88 +169,77 @@ English | [日本語](README.ja.md)
 flowchart LR
     subgraph Phone
         CAS[CarAppService<br/>NAVIGATION category] -- Surface --> VD[VirtualDisplay]
-        VD --> PR[Presentation<br/>Jetpack Compose UI]
-        PR --> WV[WebView<br/>YouTube / TVer]
-        WV -. injects .-> JS[CSS / JS tweaks<br/>ad-block · quality · cast bridge]
-        LR[Lounge receiver] <-- long-poll --> YT[(YouTube Lounge API)]
-        LR --> WV
+        VD --> UI[Compose UI]
+        UI --> WV[WebView<br/>YouTube / TVer]
+        WV -. injects .-> JS[CSS / JS tweaks<br/>ad-block · quality]
+        UI --> MP[Map pane]
+        MP -- Surface --> SH[Shizuku user service<br/>VirtualDisplay + input]
+        SH --> MAP[Google Maps etc.]
+        MAP -. navigation notification .-> NL[Notification listener]
+        NL --> CAS
+        LR[Lounge receiver] --> WV
     end
-    CAS <== Android Auto ==> HU[Car display]
-    APP[YouTube app] -- Link with TV code --> YT
+    CAS <== Android Auto ==> CAR[Car display<br/>HUD · cluster]
+    YT[YouTube app] -- cast --> LR
 ```
 
-- **Drawing on the car screen.** The Car App Library lets a *navigation* app draw its own map onto a `Surface`. aweauto turns that surface into a `VirtualDisplay` and shows a Compose `Presentation` on it, so any UI can run on the car screen.
-- **Touch input.** The host only reports taps and scroll deltas. `TouchInjector` rebuilds them into `MotionEvent`s and feeds them to the UI.
-- **Site tweaks.** Stylesheets and scripts live in [`app/src/main/assets`](app/src/main/assets). They are injected at document start with `WebViewCompat.addDocumentStartJavaScript`.
-- **Background download (TVer).** `HlsPrefetcher` intercepts the HLS playlists and trims the master playlist to one rendition so the player never switches quality. It then downloads every segment and AES key to a 2 GB LRU disk cache and answers the player's segment requests from disk. The player's own MSE buffer stays small, so the browser quota is never hit.
-- **Casting.** Casting is a Kotlin port of the YouTube Lounge (MDX) screen protocol. It keeps a persistent screen ID and a bind long-poll, and reports playback state back to the phone.
-
-## Getting started
-
-### Requirements
-
-- An Android 9+ phone with Android Auto installed
-- JDK 17 and the Android SDK (platform 35)
-- For the map pane: [Shizuku](https://shizuku.rikka.app/), started over adb (`scripts/aw.sh shizuku`)
-
-### Build and install
-
-Android Auto hides navigation apps that didn't come from the Play Store. To get around that, install with the Play Store as the installer:
-
-```bash
-./gradlew :app:assembleDebug
-adb install -r -i com.android.vending app/build/outputs/apk/debug/app-debug.apk
-```
-
-Then enable unknown sources in Android Auto:
-
-1. In Android Auto settings, tap **Version** 10 times to enable developer mode.
-2. Open ⋮ → **Developer settings** and turn on **Unknown sources**.
-3. Reconnect to the car. **aweauto** now appears in the app launcher.
-
-### Casting from the YouTube app
-
-- **Same Wi-Fi or hotspot:** just tap the cast button in the YouTube player and pick **aweauto (車)**.
-- **Otherwise (first time only):**
-  1. Tap the cast icon on the car home screen. The 12-digit TV code and a QR are shown.
-  2. In the YouTube app, go to **You → Settings → Watch on TV → Link with TV code** and enter the code. On the phone running aweauto, use **Copy code & open YouTube** instead.
-  3. After that, **aweauto (車)** stays in the cast menu.
+- **Drawing on the car screen.** A *navigation* app gets a raw `Surface` from the Car App Library. aweauto turns it into a `VirtualDisplay` and shows a Compose `Presentation` on it, so any UI can run there. Taps and scrolls from the host are rebuilt into `MotionEvent`s.
+- **The map pane.**
+  - A [Shizuku](https://shizuku.rikka.app/) user service runs with shell privileges. It creates a second `VirtualDisplay` on the pane's surface and launches the map app on it.
+  - Touches go to that display through an `InputForwarder`.
+  - When the pane is resized, the display is resized rather than recreated, so the map app keeps running.
+- **HUD guidance.** A notification listener parses the map app's navigation notification and sends it to the car with `NavigationManager.updateTrip`.
+- **Site tweaks.** The CSS and JS in [`app/src/main/assets`](app/src/main/assets) are injected at document start with `WebViewCompat.addDocumentStartJavaScript`.
+- **TVer cache.** `HlsPrefetcher` trims the HLS master playlist to one rendition. It then downloads every segment and key to disk and serves the player from there, so the player's own buffer stays small.
+- **Casting.** A Kotlin port of the YouTube Lounge (MDX) screen protocol, plus a DIAL server for the local network.
 
 ## Development
 
-Everyday tasks are wrapped in [`scripts/aw.sh`](scripts/aw.sh) (run it with no arguments for the full list):
+[`scripts/aw.sh`](scripts/aw.sh) wraps everyday tasks. Run it with no arguments for the full list.
 
 | Command | What it does |
 |---|---|
-| `scripts/aw.sh deploy` | Build and install (with the Play Store as installer) |
-| `scripts/aw.sh dhu` / `dhu-720` | Start the [Desktop Head Unit](https://developer.android.com/training/cars/testing/dhu) to try it without a car |
-| `scripts/aw.sh send <url>` | Open a YouTube/TVer URL on the car screen |
-| `scripts/aw.sh shizuku` / `tcpip` | Start Shizuku / let aweauto restart it on its own |
-| `scripts/aw.sh mute on` | Keep videos muted while debugging (debug builds) |
-| `scripts/aw.sh e2e-map` | Map pane E2E on a real phone (see below) |
-| `scripts/aw.sh readme-shots` | Capture the README screenshots from the DHU |
+| `scripts/aw.sh deploy` | Build and install |
+| `scripts/aw.sh dhu` | Start the [Desktop Head Unit](https://developer.android.com/training/cars/testing/dhu) to try it without a car |
+| `scripts/aw.sh send <url>` | Open a YouTube or TVer URL on the car screen |
+| `scripts/aw.sh logs` | Follow aweauto's logs |
+| `scripts/aw.sh devtools` | Inspect the WebView from Chrome DevTools |
+| `scripts/aw.sh mute on` | Keep videos muted while you debug |
+| `scripts/aw.sh e2e-map --apps all` | End-to-end test of the map pane on a real phone |
+| `scripts/aw.sh readme-shots` | Retake the README screenshots from the DHU |
+| `./gradlew :app:testDebugUnitTest` | Unit tests |
 
-- **Try it without a car.** Install the DHU with `sdkmanager "extras;google;auto"`, choose **Start head unit server** in Android Auto's developer menu, then run `scripts/aw.sh dhu`.
-- **Tweak the CSS.** Debug builds enable WebView remote debugging, so you can inspect the live DOM from `chrome://inspect` (or `scripts/aw.sh devtools`) while editing `assets/css/*.css`.
-- **Map pane E2E.** With aweauto open in split view on the DHU or a car, run `scripts/aw.sh e2e-map --apps all`. It restarts aweauto several times and switches through every installed map app, and checks each time that the map comes back and that exactly one `map_input` service and one map display remain. Resizing and taps are tried by hand when run in a terminal (`--no-resize` skips that). The report goes to `build/e2e/map-*/report.md`, and the exit code is non-zero on failure.
-- **README screenshots.** Close any running DHU and run `scripts/aw.sh readme-shots` (`--only home,settings` to retake some). It starts a 1280×720 DHU; open each requested screen and press Enter. PNGs go to `docs/screenshots`.
-- **Run the tests:** `./gradlew :app:testDebugUnitTest`
+<details>
+<summary><b>More on the DHU, E2E and screenshots</b></summary>
+
+- **DHU.** Install it with `sdkmanager "extras;google;auto"`. Choose **Start head unit server** in Android Auto's developer menu, then run `scripts/aw.sh dhu`.
+- **Map pane E2E.**
+  - Open aweauto in split view on the DHU or in a car, then run `scripts/aw.sh e2e-map --apps all`.
+  - It restarts aweauto several times and switches through every installed map app. Each time, it checks that the map comes back and that exactly one map service and one map display remain.
+  - In a terminal, it also asks you to try resizing and taps by hand (`--no-resize` skips that).
+  - The report goes to `build/e2e/map-*/report.md`, and the exit code is non-zero on failure.
+- **Screenshots.** Close any running DHU, then run `scripts/aw.sh readme-shots`. Use `--only home,settings` to retake just some of them.
+  - It starts a 1280×720 DHU. Open each requested screen and press Enter.
+  - For the map shots, the map shows Tokyo, so your home and account don't appear.
+  - Afterwards, `python3 scripts/readme-hero.py` rebuilds `docs/hero.png` (needs Pillow).
+
+</details>
 
 ## Limitations
 
-- **Android Auto's own UI stays.** The system bar and the small back button that Android Auto overlays can't be hidden by an app.
-- **Site changes break things.** The site tweaks depend on YouTube's and TVer's DOM and player internals, and can stop working when those sites change.
-- **YouTube can't be cached ahead.** Its web player streams over SABR, which sends POST requests whose body decides what the server returns, so WebView can't predict or serve those requests. Its read-ahead tops out at about 2 minutes.
-- **TVer is Japan only.** TVer needs a Japanese IP address.
+- **Android Auto's own UI stays.** Apps can't hide its system bar or the small back button it overlays.
+- **Sites change.** The tweaks depend on YouTube's and TVer's pages and player internals, and may break when those change.
+- **YouTube can't be cached ahead.** Its web player streams over SABR, whose POST requests can't be predicted or served from WebView. Read-ahead tops out at about 2 minutes.
+- **TVer is Japan only.** It needs a Japanese IP address.
+- **HUD support depends on the car.** Some cars only show their built-in navigation on the HUD.
 
 ## Disclaimer
 
-- aweauto is an unofficial personal project. It isn't affiliated with or endorsed by Google, YouTube or TVer.
-- It uses undocumented APIs and modifies third-party web pages, which may be against those services' terms of use.
-- Use it at your own risk.
+aweauto is an unofficial personal project. It isn't affiliated with or endorsed by Google, YouTube or TVer. It uses undocumented APIs and modifies third-party web pages, which may be against those services' terms. Use it at your own risk.
 
 ## Acknowledgements
 
-- [Fermata Auto](https://github.com/AndreyPavlenko/Fermata), for showing that custom UIs on Android Auto are possible
-- [yt-cast-receiver](https://github.com/patrickkfkan/yt-cast-receiver) and [plaincast](https://github.com/aykevl/plaincast), for documenting the Lounge protocol
-- [AdGuard](https://github.com/AdguardTeam/AdGuardSDNSFilter) and [EasyList](https://easylist.to/), for the filter lists
+- [Fermata Auto](https://github.com/AndreyPavlenko/Fermata) showed that custom UIs on Android Auto are possible.
+- [yt-cast-receiver](https://github.com/patrickkfkan/yt-cast-receiver) and [plaincast](https://github.com/aykevl/plaincast) documented the Lounge protocol.
+- [Shizuku](https://github.com/RikkaApps/Shizuku) makes the map pane possible.
+- [AdGuard](https://github.com/AdguardTeam/AdGuardSDNSFilter) and [EasyList](https://easylist.to/) provide the filter lists.
