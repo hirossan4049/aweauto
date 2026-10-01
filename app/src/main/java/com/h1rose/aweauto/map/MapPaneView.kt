@@ -121,11 +121,13 @@ private class ProviderSurfaceView(
 private const val ATTACH_SETTLE_MS = 300L
 
 /**
- * 地図アプリに見せる画面の最小サイズ (dp)。スマホの縦画面くらいの広さがあれば
- * 検索欄・下のシート・ボタン類が重ならずに並ぶ。
+ * 地図アプリに見せる画面の最小サイズ (dp)。横長の枠は 400x320、縦長の枠はスマホの縦画面くらいの 360x480。
+ * これくらいあれば検索欄・下のシート・ボタン類が重ならずに並ぶ。
  */
-private const val MAP_MIN_WIDTH_DP = 400f
-private const val MAP_MIN_HEIGHT_DP = 320f
+private const val MAP_MIN_LANDSCAPE_W_DP = 400f
+private const val MAP_MIN_LANDSCAPE_H_DP = 320f
+private const val MAP_MIN_PORTRAIT_W_DP = 360f
+private const val MAP_MIN_PORTRAIT_H_DP = 480f
 
 /** 小さくしすぎると文字が読めなくなるので、ここより下げない */
 private const val MAP_MIN_DPI = 110
@@ -135,8 +137,11 @@ private const val MAP_MIN_DPI = 110
  * 文字やボタンは小さくなるが、検索欄や下のシートが画面を埋めて地図が見えなくなるのを防ぐ。
  */
 internal fun mapDensityDpi(widthPx: Int, heightPx: Int, baseDpi: Int): Int {
-    val fitWidth = widthPx * 160f / MAP_MIN_WIDTH_DP
-    val fitHeight = heightPx * 160f / MAP_MIN_HEIGHT_DP
+    val portrait = heightPx > widthPx
+    val minW = if (portrait) MAP_MIN_PORTRAIT_W_DP else MAP_MIN_LANDSCAPE_W_DP
+    val minH = if (portrait) MAP_MIN_PORTRAIT_H_DP else MAP_MIN_LANDSCAPE_H_DP
+    val fitWidth = widthPx * 160f / minW
+    val fitHeight = heightPx * 160f / minH
     return minOf(baseDpi.toFloat(), fitWidth, fitHeight).toInt().coerceIn(minOf(MAP_MIN_DPI, baseDpi), baseDpi)
 }
 private const val MIN_SIZE_PX = 16

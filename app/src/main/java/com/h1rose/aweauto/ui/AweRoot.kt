@@ -108,8 +108,15 @@ private fun paneRects(layout: MapLayout, w: Dp, h: Dp): Pair<PaneRect, PaneRect>
         }
         MapMode.PIP -> {
             val full = PaneRect(0.dp, 0.dp, w, h)
-            val pw = w * layout.pipScale
-            val ph = pw * 9f / 16f
+            // 動画の小窓は 16:9。地図の小窓は、スマホ向けの地図アプリが縦画面前提の作りなので 3:4 の縦長にする
+            val mapIsSmall = !layout.mapFirst
+            val (pw, ph) = if (mapIsSmall) {
+                val height = (h - PipMargin * 2) * (layout.pipScale * 2f).coerceAtMost(1f)
+                height * 3f / 4f to height
+            } else {
+                val width = w * layout.pipScale
+                width to width * 9f / 16f
+            }
             val x = when (layout.pipCorner) {
                 PipCorner.TOP_START, PipCorner.BOTTOM_START -> PipMargin
                 else -> w - pw - PipMargin

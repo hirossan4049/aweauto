@@ -17,6 +17,12 @@ class MapDensityTest {
     }
 
     @Test
+    fun portraitPipLooksLikeAPhoneScreen() {
+        // 縦長の小窓 405x540 px は 240dpi だと 270x360dp と狭い。180dpi にして 360x480dp として描かせる
+        assertEquals(180, mapDensityDpi(405, 540, 240))
+    }
+
+    @Test
     fun doesNotGoBelowMinimum() {
         assertEquals(110, mapDensityDpi(200, 120, 240))
     }
