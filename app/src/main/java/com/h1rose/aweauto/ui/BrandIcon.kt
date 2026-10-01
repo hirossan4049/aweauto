@@ -26,9 +26,29 @@ import com.h1rose.aweauto.data.StreamService
 /** サービスのアイコン。画像ファイルは持たずに描く (オフラインでも出る) */
 @Composable
 fun BrandIcon(service: StreamService, size: Dp, modifier: Modifier = Modifier) {
-    when (service) {
-        StreamService.YOUTUBE -> YouTubeMark(size, modifier)
-        StreamService.TVER -> TVerMark(size, modifier)
+    when {
+        service == StreamService.YOUTUBE -> YouTubeMark(size, modifier)
+        service == StreamService.TVER -> TVerMark(size, modifier)
+        // 専用のマークを用意していないサイトは、ブランド色の角丸にサイト名の頭文字
+        else -> LetterMark(service, size, modifier)
+    }
+}
+
+@Composable
+private fun LetterMark(service: StreamService, size: Dp, modifier: Modifier) {
+    Box(
+        modifier
+            .size(size)
+            .clip(RoundedCornerShape(size * 0.24f))
+            .background(service.brand),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(
+            service.label.take(1),
+            color = Color.White,
+            fontSize = (size.value * 0.46f).sp,
+            fontWeight = FontWeight.Bold,
+        )
     }
 }
 

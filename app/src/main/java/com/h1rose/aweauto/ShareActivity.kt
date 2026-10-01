@@ -22,7 +22,7 @@ class ShareActivity : Activity() {
             AweNav.go(route)
             Toast.makeText(this, "車の画面で開きます", Toast.LENGTH_SHORT).show()
         } else {
-            Toast.makeText(this, "YouTube か TVer のリンクを共有してください", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, "対応している配信サイトのリンクを共有してください", Toast.LENGTH_SHORT).show()
         }
         finish()
     }
@@ -43,8 +43,10 @@ class ShareActivity : Activity() {
                         else uri.buildUpon().authority("m.youtube.com").build().toString()
                     )
                 }
-                host.endsWith("tver.jp") -> Route.Web(StreamService.TVER, url)
-                else -> null
+                // それ以外のサイトは StreamService.hosts で見分ける (サイトを足すときは StreamService に書くだけでいい)
+                else -> StreamService.entries
+                    .firstOrNull { s -> s.hosts.any { host == it || host.endsWith(".$it") } }
+                    ?.let { Route.Web(it, url) }
             }
         }
 
