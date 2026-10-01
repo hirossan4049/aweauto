@@ -9,8 +9,14 @@ import kotlinx.coroutines.flow.asStateFlow
  * 「地図＋動画」モードの左側 (地図枠) の中身。
  *
  * aweauto は地図枠の描画先 [Surface] とタッチを渡すだけで、何を描くかは実装側に任せる。
- * 車の画面は Android Auto 側の都合 (別の画面に切り替え・バックカメラなど) で作り直されるので、
- * [attach] / [detach] は何度も呼ばれる。中身の状態は detach されても保持しておくこと。
+ * 車の画面は Android Auto 側の都合 (別の画面に切り替え・バックカメラなど) や、並べ方の切り替え
+ * (左右分割 ⇄ PiP・入れ替え・幅の変更) で [attach] / [detach] が何度も呼ばれる。
+ *
+ * 中身の状態は detach されても保持すること。特に他アプリを仮想ディスプレイに出す実装では、
+ * - [detach] では仮想ディスプレイを release せず、`VirtualDisplay.setSurface(null)` で外すだけにする
+ * - 2 回目以降の [attach] では作り直さず、`resize(width, height, densityDpi)` と `setSurface(surface)` で差し替える
+ * ディスプレイを作り直すと、その上のアプリは表示先を失って落ちる (Google マップは
+ * `Display.getDisplayAdjustments()` の NullPointerException で落ちることを確認済み)。
  * すべてメインスレッドから呼ばれる。
  */
 interface MapPaneProvider {
