@@ -12,31 +12,39 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import java.io.File
+import androidx.annotation.StringRes
+import com.h1rose.aweauto.R
 import java.net.HttpURLConnection
 import java.net.URL
 import java.util.concurrent.TimeUnit
 
 private const val TAG = "AweAdBlock"
 
-enum class FilterList(val id: String, val label: String, val description: String, val url: String, val defaultOn: Boolean) {
+enum class FilterList(
+    val id: String,
+    @StringRes val label: Int,
+    @StringRes val description: Int,
+    val url: String,
+    val defaultOn: Boolean,
+) {
     ADGUARD_DNS(
         id = "adguard_dns",
-        label = "AdGuard DNS フィルタ",
-        description = "広告・トラッカーのドメインをまとめてブロック",
+        label = R.string.filter_adguard_dns,
+        description = R.string.filter_adguard_dns_desc,
         url = "https://adguardteam.github.io/AdGuardSDNSFilter/Filters/filter.txt",
         defaultOn = true,
     ),
     EASYLIST(
         id = "easylist",
-        label = "EasyList",
-        description = "定番の広告フィルタ (ドメイン単位のルールだけ使う)",
+        label = R.string.filter_easylist,
+        description = R.string.filter_easylist_desc,
         url = "https://easylist.to/easylist/easylist.txt",
         defaultOn = false,
     ),
     ADGUARD_JAPANESE(
         id = "adguard_japanese",
-        label = "AdGuard 日本語フィルタ",
-        description = "日本のサイト向けの広告フィルタ (ドメイン単位のルールだけ使う)",
+        label = R.string.filter_adguard_japanese,
+        description = R.string.filter_adguard_japanese_desc,
         url = "https://filters.adtidy.org/extension/ublock/filters/7.txt",
         defaultOn = false,
     ),
@@ -46,7 +54,8 @@ data class AdBlockStatus(
     val domainCount: Int = 0,
     val lastUpdated: Long = 0,
     val updating: Boolean = false,
-    val error: String? = null,
+    /** 前回の更新で取得できなかったリスト */
+    val failed: FilterList? = null,
 )
 
 /**
@@ -102,16 +111,16 @@ object AdBlocker {
 
     fun update(lists: Set<FilterList>) {
         scope.launch {
-            _status.value = _status.value.copy(updating = true, error = null)
-            var error: String? = null
+            _status.value = _status.value.copy(updating = true, failed = null)
+            var failed: FilterList? = null
             for (list in lists) {
                 runCatching { download(list) }.onFailure {
                     Log.w(TAG, "download failed: ${list.id}", it)
-                    error = "${list.label} の取得に失敗しました"
+                    failed = list
                 }
             }
             rebuild(lists)
-            _status.value = _status.value.copy(updating = false, error = error)
+            _status.value = _status.value.copy(updating = false, failed = failed)
         }
     }
 

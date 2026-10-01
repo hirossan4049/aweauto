@@ -25,6 +25,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -75,9 +76,9 @@ private fun PhoneHeader(modifier: Modifier = Modifier) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Icon(AweIcons.DirectionsCar, contentDescription = null, tint = AweColors.OnSurface, modifier = Modifier.size(38.dp))
             Spacer(Modifier.height(10.dp))
-            Text("車載画面は Android Auto 側に表示中", color = AweColors.OnSurface, fontSize = 18.sp, fontWeight = FontWeight.SemiBold)
+            Text(stringResource(R.string.phone_header_title), color = AweColors.OnSurface, fontSize = 18.sp, fontWeight = FontWeight.SemiBold)
             Spacer(Modifier.height(4.dp))
-            Text("スマホ側は軽量な設定画面だけを表示します", color = AweColors.OnSurfaceDim, fontSize = 13.sp)
+            Text(stringResource(R.string.phone_header_desc), color = AweColors.OnSurfaceDim, fontSize = 13.sp)
             Spacer(Modifier.height(14.dp))
             androidx.compose.foundation.layout.Row {
                 Icon(AweIcons.PlayCircle, contentDescription = null, tint = AweColors.OnSurfaceDim, modifier = Modifier.size(18.dp))

@@ -4,6 +4,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
+import com.h1rose.aweauto.R
 
 /** 地図枠に出すアプリ */
 data class NativeMapApp(
@@ -83,7 +84,7 @@ object NavApps {
         val pm = context.packageManager
         val pkg = LEGACY_IDS[id] ?: id
         if (pkg != null && pkg !in LOCKED_WHILE_PROJECTING && isInstalled(pm, pkg)) return NativeMapApp(pkg, label(pm, pkg))
-        return installed(context).firstOrNull() ?: NativeMapApp(PREFERRED.first(), "Google マップ")
+        return installed(context).firstOrNull() ?: NativeMapApp(PREFERRED.first(), context.getString(R.string.google_maps))
     }
 
     @Suppress("DEPRECATION")

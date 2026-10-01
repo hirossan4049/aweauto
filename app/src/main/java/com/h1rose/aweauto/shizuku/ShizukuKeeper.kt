@@ -3,6 +3,8 @@ package com.h1rose.aweauto.shizuku
 import android.content.Context
 import android.os.Build
 import android.util.Log
+import androidx.annotation.StringRes
+import com.h1rose.aweauto.R
 import dadb.AdbKeyPair
 import dadb.Dadb
 import kotlinx.coroutines.CoroutineScope
@@ -37,11 +39,13 @@ object ShizukuKeeper {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private var job: Job? = null
     private lateinit var keyDir: File
+    private lateinit var appContext: Context
 
     private val _status = MutableStateFlow(KeeperStatus())
     val status: StateFlow<KeeperStatus> = _status.asStateFlow()
 
     fun init(context: Context) {
+        appContext = context.applicationContext
         keyDir = File(context.filesDir, "adb")
     }
 
@@ -64,28 +68,31 @@ object ShizukuKeeper {
             Dadb.create("127.0.0.1", ADB_PORT, keyPair(), connectTimeout = 3_000, socketTimeout = 15_000).use { adb ->
                 val dir = adb.shell("pm path $SHIZUKU_PKG").output.trim()
                     .removePrefix("package:").substringBeforeLast("/base.apk")
-                check(dir.isNotEmpty()) { "Shizuku がインストールされていません" }
+                if (dir.isEmpty()) throw RestartError(R.string.shizuku_not_installed)
                 val res = adb.shell("$dir/lib/${abiDir()}/libshizuku.so")
                 Log.i(TAG, res.allOutput.trim())
-                check(res.exitCode == 0) { "起動に失敗しました (${res.exitCode})" }
+                if (res.exitCode != 0) throw RestartError(R.string.shizuku_start_failed, res.exitCode)
             }
         }
         // Shizuku のサーバーが立ち上がってアプリに通知されるまで少し待つ
         delay(2_000)
         ShizukuState.refresh()
         val message = result.fold(
-            onSuccess = { "起動しました" },
+            onSuccess = { appContext.getString(R.string.shizuku_started) },
             onFailure = {
                 Log.w(TAG, "restart failed", it)
-                when {
-                    it is java.net.ConnectException ->
-                        "スマホ内の adb につながりません。PC で scripts/aw.sh tcpip を実行してください"
+                when (it) {
+                    is RestartError -> appContext.getString(it.reason, *it.args)
+                    is java.net.ConnectException -> appContext.getString(R.string.shizuku_no_adb)
                     else -> it.message ?: it.javaClass.simpleName
                 }
             },
         )
         _status.value = _status.value.copy(running = false, lastResult = message)
     }
+
+    /** 設定画面に出す、起動し直せなかった理由 */
+    private class RestartError(@StringRes val reason: Int, vararg val args: Any) : Exception()
 
     private fun keyPair(): AdbKeyPair {
         val private = File(keyDir, "adbkey")

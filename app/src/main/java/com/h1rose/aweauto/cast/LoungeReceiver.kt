@@ -254,7 +254,7 @@ object LoungeReceiver {
         val body = post(url, mapOf("count" to "0"))
         Log.i(TAG, "bind response ${body.length} chars")
         LoungeChunkParser().feed(body).forEach(::handle)
-        check(sid.isNotEmpty()) { "bind に SID が無い" }
+        check(sid.isNotEmpty()) { "no SID in the bind response" }
         _status.value = _status.value.copy(online = true, error = null)
         Log.i(TAG, "bind ok")
     }
@@ -276,7 +276,7 @@ object LoungeReceiver {
                 val remotes = (0 until (devices?.length() ?: 0))
                     .map { devices!!.getJSONObject(it) }
                     .filter { it.optString("type") == "REMOTE_CONTROL" }
-                    .map { it.optString("name").ifEmpty { it.optString("clientName", "スマホ") } }
+                    .map { it.optString("name").ifEmpty { it.optString("clientName", "YouTube") } }
                 val linked = (_status.value.linked + remotes).distinct().sorted()
                 if (linked != _status.value.linked) sp.edit().putStringSet("linked", linked.toSet()).apply()
                 _status.value = _status.value.copy(remotes = remotes, linked = linked)

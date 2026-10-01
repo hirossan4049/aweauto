@@ -12,10 +12,12 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.FilterQuality
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.google.zxing.BarcodeFormat
 import com.google.zxing.EncodeHintType
 import com.google.zxing.qrcode.QRCodeWriter
+import com.h1rose.aweauto.R
 
 @Composable
 fun QrCode(text: String, modifier: Modifier = Modifier) {
@@ -29,7 +31,7 @@ fun QrCode(text: String, modifier: Modifier = Modifier) {
     }
     Image(
         bitmap = bitmap,
-        contentDescription = "QR コード",
+        contentDescription = stringResource(R.string.qr_code),
         // 1 モジュール = 1px の画像を拡大するので、ぼかさずに拡大する
         filterQuality = FilterQuality.None,
         modifier = modifier

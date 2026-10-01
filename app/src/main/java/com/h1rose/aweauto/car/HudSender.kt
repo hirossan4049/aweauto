@@ -15,6 +15,7 @@ import androidx.core.graphics.drawable.IconCompat
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleOwner
+import com.h1rose.aweauto.R
 import com.h1rose.aweauto.data.Prefs
 import com.h1rose.aweauto.hud.Hud
 import com.h1rose.aweauto.hud.HudState
@@ -118,7 +119,7 @@ class HudSender(private val carContext: CarContext, lifecycle: Lifecycle) : Defa
         }.build()
         return Trip.Builder()
             .addStep(step, stepEstimate)
-            .addDestination(Destination.Builder().setName("目的地").build(), tripEstimate)
+            .addDestination(Destination.Builder().setName(carContext.getString(R.string.hud_destination)).build(), tripEstimate)
             .build()
     }
 

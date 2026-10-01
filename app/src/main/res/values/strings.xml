@@ -1,5 +1,161 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- 既定 (英語)。日本語は values-ja/strings.xml -->
 <resources>
-    <string name="app_name">aweauto</string>
-    <string name="share_target_label">車の画面</string>
+    <string name="app_name" translatable="false">aweauto</string>
+    <string name="share_target_label">Car screen</string>
+    <!-- YouTube アプリのキャストメニューに出る名前 -->
+    <string name="cast_screen_name">aweauto (car)</string>
+    <string name="list_separator">, </string>
+
+    <!-- 共通 -->
+    <string name="back">Back</string>
+    <string name="home">Home</string>
+    <string name="settings">Settings</string>
+    <string name="close">Close</string>
+    <string name="clear">Clear</string>
+    <string name="allow">Allow</string>
+    <string name="open">Open</string>
+    <string name="loading">Loading…</string>
+    <string name="google_maps">Google Maps</string>
+
+    <!-- スマホ側の画面・共有 -->
+    <string name="phone_header_title">The car screen is showing in Android Auto</string>
+    <string name="phone_header_desc">Change settings here. They apply to the car screen right away.</string>
+    <string name="share_opening">Opening on the car screen</string>
+    <string name="share_unsupported">Share a link from a supported streaming site</string>
+
+    <!-- ホーム -->
+    <string name="tab_for_you">For you</string>
+    <string name="tab_apps">Apps</string>
+    <string name="tab_library">Library</string>
+    <string name="show_map">Show map alongside</string>
+    <string name="cast_from_phone">Cast from your phone</string>
+    <string name="shelf_apps">Apps</string>
+    <string name="shelf_continue">Continue watching</string>
+    <string name="shelf_picks">Picks</string>
+    <string name="hero_last_watched">Last watched</string>
+    <string name="hero_resume_kicker">YouTube · Resume</string>
+    <string name="hero_resume">Resume</string>
+    <string name="hero_open_youtube">Open YouTube</string>
+    <string name="hero_open_youtube_desc">Plays with the car-screen tweaks</string>
+    <string name="library_empty">No watch history yet</string>
+    <string name="shortcut_home">Home</string>
+    <string name="shortcut_music">Music</string>
+    <string name="shortcut_subscriptions">Subscriptions</string>
+    <string name="shortcut_ranking">Ranking</string>
+
+    <!-- Web 画面 -->
+    <string name="exit_fullscreen">Exit full screen</string>
+    <string name="reload">Reload</string>
+    <string name="tweaks">Tweaks</string>
+
+    <!-- 地図と並べる -->
+    <string name="map_swap">Swap</string>
+    <string name="map_to_pip">Picture-in-picture</string>
+    <string name="map_move_corner">Move to another corner</string>
+    <string name="map_resize">Resize</string>
+    <string name="map_side_by_side">Side by side</string>
+    <string name="map_on_car">The map is on the car screen</string>
+    <string name="map_not_configured">No map is set up</string>
+    <string name="map_not_configured_detail">Register a MapPaneProvider with MapPanes.register(…) to show it here</string>
+
+    <!-- 設定 -->
+    <string name="section_optimize">Display tweaks</string>
+    <string name="optimize_title">Tune %1$s for the car screen</string>
+    <string name="optimize_youtube">Dark theme, 3-column grid, full-bleed player, auto-unmute. Hides ads, Shorts and the bottom tab bar</string>
+    <string name="optimize_tver">Dark theme, full-bleed player, answers the pre-roll survey for you. Hides app prompts and the footer</string>
+
+    <string name="section_cast">Cast from your phone</string>
+    <string name="cast_receive_title">Receive casts from the YouTube app</string>
+    <string name="cast_receive_desc">Once linked with a TV code, the cast button plays here even when you\'re not on the same Wi-Fi</string>
+
+    <string name="section_network">Network and buffering</string>
+    <string name="max_height_title">Quality cap</string>
+    <string name="max_height_desc">Lower quality buffers further on the same data and stalls less on a weak signal</string>
+    <string name="max_height_auto">Auto</string>
+    <string name="offline_title">Save whole episodes in the background</string>
+    <string name="offline_desc">Episodes you watch on %1$s are saved to the phone while they play. Saved parts keep playing in tunnels and dead zones</string>
+    <string name="offline_usage_title">Saved episodes</string>
+    <string name="offline_usage">%1$.1f GB of 2 GB</string>
+    <string name="offline_progress"> · current episode %1$d%%</string>
+    <string name="yt_readahead_title">Longer YouTube read-ahead (experimental)</string>
+    <string name="yt_readahead_desc">Raises the player\'s read-ahead from about 30 seconds to about 2 minutes. YouTube can\'t be saved ahead in full</string>
+
+    <string name="section_hud">HUD and cluster</string>
+    <string name="hud_title">Show directions on the car\'s HUD and cluster</string>
+    <string name="hud_desc">Sends the turn, distance and arrival time from the map app you\'re navigating with. What appears depends on the car</string>
+    <string name="notif_access_title">Notification access</string>
+    <string name="notif_access_denied">Not allowed. Allow aweauto in the phone\'s settings so it can read the map app\'s navigation notification</string>
+    <string name="notif_access_guiding">Allowed · guiding: %1$s</string>
+    <string name="notif_access_ready">Allowed. Directions are sent once you start navigating in a map app</string>
+    <string name="open_settings">Open settings</string>
+    <string name="hud_destination">Destination</string>
+
+    <string name="section_shizuku">Extensions (Shizuku)</string>
+    <string name="map_app_title">Map pane app</string>
+    <string name="map_app_desc">Runs an installed map or navigation app in the split view\'s map pane. Needs Shizuku. If an app doesn\'t appear, running scripts/aw.sh resizable once from a PC may help</string>
+    <string name="shizuku">Shizuku</string>
+    <string name="shizuku_ready">Connected</string>
+    <string name="shizuku_no_permission">Running. aweauto needs permission</string>
+    <string name="shizuku_not_running">Not running. After a phone restart, start it from a PC</string>
+    <string name="check_again">Check again</string>
+    <string name="shizuku_auto_title">Restart it automatically if it stops</string>
+    <string name="shizuku_auto_desc">If Shizuku stops, for example when you plug into the car, aweauto restarts it through the phone\'s own adb. Run scripts/aw.sh tcpip from a PC once after each phone restart</string>
+    <string name="shizuku_restart_title">Restart now</string>
+    <string name="shizuku_restart_running">Starting…</string>
+    <string name="shizuku_restart_hint">The first time, the phone asks \"Allow USB debugging?\". Choose Always allow</string>
+    <string name="start">Start</string>
+    <string name="shizuku_started">Started</string>
+    <string name="shizuku_not_installed">Shizuku isn\'t installed</string>
+    <string name="shizuku_start_failed">Couldn\'t start it (%1$d)</string>
+    <string name="shizuku_no_adb">Can\'t reach the phone\'s adb. Run scripts/aw.sh tcpip from a PC</string>
+    <string name="dev_mute_title">Mute videos (development)</string>
+    <string name="dev_mute_desc">Keeps the DHU quiet while you test</string>
+    <string name="dev_demo_map_title">Test pattern in the map pane (development)</string>
+    <string name="dev_demo_map_desc">Checks the MapPaneProvider surface and touch handling</string>
+
+    <string name="section_adblock">Ad blocking</string>
+    <string name="adblock_title">Ad blocking</string>
+    <string name="adblock_desc">Blocks domains on the filter lists and removes YouTube video ads</string>
+    <string name="filter_adguard_dns">AdGuard DNS filter</string>
+    <string name="filter_adguard_dns_desc">Blocks ad and tracker domains</string>
+    <string name="filter_easylist" translatable="false">EasyList</string>
+    <string name="filter_easylist_desc">The classic ad filter (domain rules only)</string>
+    <string name="filter_adguard_japanese">AdGuard Japanese filter</string>
+    <string name="filter_adguard_japanese_desc">Ad filter for Japanese sites (domain rules only)</string>
+    <string name="filter_update_title">Update filter lists</string>
+    <string name="filter_updating">Updating…</string>
+    <string name="filter_failed">Couldn\'t download %1$s</string>
+    <plurals name="filter_domains">
+        <item quantity="one">%d domain</item>
+        <item quantity="other">%d domains</item>
+    </plurals>
+    <string name="filter_not_fetched">%1$s (not downloaded yet)</string>
+    <string name="filter_updated">%1$s · updated %2$s</string>
+    <string name="update">Update</string>
+
+    <string name="section_history">History</string>
+    <string name="history_clear_title">Clear watch history</string>
+    <plurals name="history_count">
+        <item quantity="one">%d video</item>
+        <item quantity="other">%d videos</item>
+    </plurals>
+
+    <!-- キャストのつなぎ方 -->
+    <string name="cast_linked">Linked: %1$s</string>
+    <string name="cast_linked_hint">Just pick \"%1$s\" from the cast button in the YouTube app</string>
+    <string name="cast_add_phone">Add another phone</string>
+    <string name="cast_same_wifi">Phones on the same Wi-Fi or hotspot</string>
+    <string name="cast_same_wifi_hint">\"%1$s\" shows up in the YouTube app\'s cast menu by itself. Nothing to type</string>
+    <string name="cast_elsewhere">Anywhere else (first time only)</string>
+    <string name="cast_code_where">In the YouTube app: You → Settings → Watch on TV → Link with TV code</string>
+    <string name="cast_qr_hint">Scan to copy the code</string>
+    <string name="cast_status_connected">Connected: %1$s</string>
+    <string name="cast_status_online">Waiting (online)</string>
+    <string name="cast_status_error">Can\'t connect: %1$s</string>
+    <string name="cast_status_connecting">Connecting…</string>
+    <string name="cast_copy_open">Copy code and open YouTube</string>
+    <string name="cast_clip_label">TV code</string>
+    <string name="cast_copied">Copied. Paste it into Link with TV code</string>
+    <string name="qr_code">QR code</string>
 </resources>

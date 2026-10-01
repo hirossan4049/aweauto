@@ -20,10 +20,12 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
+import com.h1rose.aweauto.R
 import com.h1rose.aweauto.ui.AweColors
 import com.h1rose.aweauto.ui.AweIcons
 import com.h1rose.aweauto.ui.LocalIsCar
@@ -44,7 +46,7 @@ fun MapPane(modifier: Modifier = Modifier) {
             Placeholder()
         } else if (!LocalIsCar.current) {
             // スマホのプレビューと車の画面で同じ中身を取り合わないよう、中身は車の画面にだけ出す
-            Placeholder(title = "地図は車の画面に表示中", detail = p.label)
+            Placeholder(title = stringResource(R.string.map_on_car), detail = p.label)
         } else {
             AndroidView(
                 modifier = Modifier.fillMaxSize(),
@@ -167,8 +169,8 @@ private const val MIN_SIZE_PX = 16
 
 @Composable
 private fun Placeholder(
-    title: String = "地図の表示方法が設定されていません",
-    detail: String = "MapPanes.register(...) で MapPaneProvider を登録すると、ここに表示されます",
+    title: String = stringResource(R.string.map_not_configured),
+    detail: String = stringResource(R.string.map_not_configured_detail),
 ) {
     Column(
         modifier = Modifier.fillMaxSize().padding(24.dp),

@@ -1,0 +1,155 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="share_target_label">車の画面</string>
+    <string name="cast_screen_name">aweauto (車)</string>
+    <string name="list_separator">、</string>
+
+    <!-- 共通 -->
+    <string name="back">戻る</string>
+    <string name="home">ホーム</string>
+    <string name="settings">設定</string>
+    <string name="close">閉じる</string>
+    <string name="clear">消去</string>
+    <string name="allow">許可</string>
+    <string name="open">ひらく</string>
+    <string name="loading">読み込み中…</string>
+    <string name="google_maps">Google マップ</string>
+
+    <!-- スマホ側の画面・共有 -->
+    <string name="phone_header_title">車載画面は Android Auto 側に表示中</string>
+    <string name="phone_header_desc">設定はここで変えられます。車の画面にもすぐ反映されます</string>
+    <string name="share_opening">車の画面で開きます</string>
+    <string name="share_unsupported">対応している配信サイトのリンクを共有してください</string>
+
+    <!-- ホーム -->
+    <string name="tab_for_you">おすすめ</string>
+    <string name="tab_apps">アプリ</string>
+    <string name="tab_library">ライブラリ</string>
+    <string name="show_map">地図と並べる</string>
+    <string name="cast_from_phone">スマホからキャスト</string>
+    <string name="shelf_apps">アプリ</string>
+    <string name="shelf_continue">続きを見る</string>
+    <string name="shelf_picks">ピックアップ</string>
+    <string name="hero_last_watched">最後に見た動画</string>
+    <string name="hero_resume_kicker">YouTube ・ 続きから再生</string>
+    <string name="hero_resume">続きを見る</string>
+    <string name="hero_open_youtube">YouTube をひらく</string>
+    <string name="hero_open_youtube_desc">車の画面向けに最適化した表示で再生します</string>
+    <string name="library_empty">まだ再生履歴はありません</string>
+    <string name="shortcut_home">ホーム</string>
+    <string name="shortcut_music">音楽</string>
+    <string name="shortcut_subscriptions">登録チャンネル</string>
+    <string name="shortcut_ranking">ランキング</string>
+
+    <!-- Web 画面 -->
+    <string name="exit_fullscreen">全画面を終了</string>
+    <string name="reload">再読込</string>
+    <string name="tweaks">最適化</string>
+
+    <!-- 地図と並べる -->
+    <string name="map_swap">入れ替え</string>
+    <string name="map_to_pip">小窓にする</string>
+    <string name="map_move_corner">隅を移動</string>
+    <string name="map_resize">大きさ</string>
+    <string name="map_side_by_side">左右に並べる</string>
+    <string name="map_on_car">地図は車の画面に表示中</string>
+    <string name="map_not_configured">地図の表示方法が設定されていません</string>
+    <string name="map_not_configured_detail">MapPanes.register(…) で MapPaneProvider を登録すると、ここに表示されます</string>
+
+    <!-- 設定 -->
+    <string name="section_optimize">表示の最適化</string>
+    <string name="optimize_title">%1$s を車の画面向けに最適化</string>
+    <string name="optimize_youtube">ダークテーマ・3 列グリッド・全画面プレーヤー・自動ミュート解除。広告/ショート/下タブを隠す</string>
+    <string name="optimize_tver">ダークテーマ・全画面プレーヤー・再生前アンケートにダミー値で自動回答。アプリ誘導/フッターを隠す</string>
+
+    <string name="section_cast">スマホからキャスト</string>
+    <string name="cast_receive_title">YouTube アプリからのキャストを受ける</string>
+    <string name="cast_receive_desc">テレビコードでリンクすると、同じ Wi-Fi でなくてもキャストボタンからこの画面で再生できます</string>
+
+    <string name="section_network">通信と先読み</string>
+    <string name="max_height_title">画質の上限</string>
+    <string name="max_height_desc">低いほど同じ通信量で長く先読みでき、電波が弱くても止まりにくくなります</string>
+    <string name="max_height_auto">自動</string>
+    <string name="offline_title">番組を裏で丸ごと保存する</string>
+    <string name="offline_desc">%1$s で見ている番組を、再生しながら最後まで端末に保存します。保存済みの部分はトンネルや圏外でも止まりません</string>
+    <string name="offline_usage_title">保存した番組</string>
+    <string name="offline_usage">%1$.1f GB / 2 GB</string>
+    <string name="offline_progress"> ・ 再生中の番組 %1$d%%</string>
+    <string name="yt_readahead_title">YouTube の先読みを増やす (実験的)</string>
+    <string name="yt_readahead_desc">プレーヤーの先読みを約 30 秒から約 2 分に増やします。YouTube は丸ごとの先読みができません</string>
+
+    <string name="section_hud">HUD・メーター</string>
+    <string name="hud_title">道案内を車の HUD・メーターに出す</string>
+    <string name="hud_desc">地図枠の Google マップなどでナビ中の案内 (曲がる方向・距離・到着時刻) を車に送ります。どこまで表示されるかは車によります</string>
+    <string name="notif_access_title">通知へのアクセス</string>
+    <string name="notif_access_denied">未許可。地図アプリのナビ通知を読むために、スマホの設定で aweauto を許可してください</string>
+    <string name="notif_access_guiding">許可済み・案内中: %1$s</string>
+    <string name="notif_access_ready">許可済み。地図アプリでナビを始めると案内を送ります</string>
+    <string name="open_settings">設定を開く</string>
+    <string name="hud_destination">目的地</string>
+
+    <string name="section_shizuku">拡張 (Shizuku)</string>
+    <string name="map_app_title">地図枠に出すアプリ</string>
+    <string name="map_app_desc">分割表示の地図枠に、端末に入っている地図・カーナビアプリ本体を起動します。Shizuku の接続が必要です。地図枠に出ないアプリは、PC で scripts/aw.sh resizable を一度実行すると出せることがあります</string>
+    <string name="shizuku">Shizuku</string>
+    <string name="shizuku_ready">接続済み</string>
+    <string name="shizuku_no_permission">起動中。aweauto への許可が必要です</string>
+    <string name="shizuku_not_running">未起動。スマホの再起動後は PC から起動コマンドを実行してください</string>
+    <string name="check_again">再確認</string>
+    <string name="shizuku_auto_title">止まったら自動で起動し直す</string>
+    <string name="shizuku_auto_desc">車につないだときなどに Shizuku が止まったら、スマホ内の adb から起動し直します。スマホの再起動後に一度だけ PC で scripts/aw.sh tcpip を実行してください</string>
+    <string name="shizuku_restart_title">今すぐ起動し直す</string>
+    <string name="shizuku_restart_running">起動中…</string>
+    <string name="shizuku_restart_hint">初回はスマホに「USB デバッグを許可しますか」が出るので「常に許可」してください</string>
+    <string name="start">起動</string>
+    <string name="shizuku_started">起動しました</string>
+    <string name="shizuku_not_installed">Shizuku がインストールされていません</string>
+    <string name="shizuku_start_failed">起動に失敗しました (%1$d)</string>
+    <string name="shizuku_no_adb">スマホ内の adb につながりません。PC で scripts/aw.sh tcpip を実行してください</string>
+    <string name="dev_mute_title">動画をミュートする (開発用)</string>
+    <string name="dev_mute_desc">DHU での確認中に音を出さないようにします</string>
+    <string name="dev_demo_map_title">地図枠にテスト表示を出す (開発用)</string>
+    <string name="dev_demo_map_desc">MapPaneProvider の描画先とタッチの受け渡しを確かめます</string>
+
+    <string name="section_adblock">広告ブロック</string>
+    <string name="adblock_title">広告ブロック</string>
+    <string name="adblock_desc">フィルタリストに載っているドメインへの通信を止め、YouTube の動画広告を取り除きます</string>
+    <string name="filter_adguard_dns">AdGuard DNS フィルタ</string>
+    <string name="filter_adguard_dns_desc">広告・トラッカーのドメインをまとめてブロック</string>
+    <string name="filter_easylist_desc">定番の広告フィルタ (ドメイン単位のルールだけ使う)</string>
+    <string name="filter_adguard_japanese">AdGuard 日本語フィルタ</string>
+    <string name="filter_adguard_japanese_desc">日本のサイト向けの広告フィルタ (ドメイン単位のルールだけ使う)</string>
+    <string name="filter_update_title">フィルタリストを更新</string>
+    <string name="filter_updating">更新中…</string>
+    <string name="filter_failed">%1$s の取得に失敗しました</string>
+    <plurals name="filter_domains">
+        <item quantity="other">%d ドメイン</item>
+    </plurals>
+    <string name="filter_not_fetched">%1$s (未取得)</string>
+    <string name="filter_updated">%1$s ・ %2$s 更新</string>
+    <string name="update">更新</string>
+
+    <string name="section_history">履歴</string>
+    <string name="history_clear_title">再生履歴を消去</string>
+    <plurals name="history_count">
+        <item quantity="other">%d 件</item>
+    </plurals>
+
+    <!-- キャストのつなぎ方 -->
+    <string name="cast_linked">リンク済み: %1$s</string>
+    <string name="cast_linked_hint">YouTube アプリのキャストボタンから「%1$s」を選ぶだけで再生できます</string>
+    <string name="cast_add_phone">別のスマホを追加</string>
+    <string name="cast_same_wifi">同じ Wi-Fi・テザリングにいるスマホ</string>
+    <string name="cast_same_wifi_hint">YouTube アプリのキャストボタンに「%1$s」が自動で出ます。入力は要りません</string>
+    <string name="cast_elsewhere">それ以外 (はじめの一度だけ)</string>
+    <string name="cast_code_where">YouTube アプリ → マイページ → 設定 → テレビで見る → テレビコードでリンク に入力</string>
+    <string name="cast_qr_hint">読み取るとコードをコピー</string>
+    <string name="cast_status_connected">接続中: %1$s</string>
+    <string name="cast_status_online">待機中 (オンライン)</string>
+    <string name="cast_status_error">接続できません: %1$s</string>
+    <string name="cast_status_connecting">接続中…</string>
+    <string name="cast_copy_open">コードをコピーして YouTube を開く</string>
+    <string name="cast_clip_label">テレビコード</string>
+    <string name="cast_copied">コピーしました。テレビコードでリンク の欄に貼り付けてください</string>
+    <string name="qr_code">QR コード</string>
+</resources>

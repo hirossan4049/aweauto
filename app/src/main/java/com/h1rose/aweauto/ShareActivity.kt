@@ -5,6 +5,7 @@ import android.content.Intent
 import android.os.Bundle
 import android.widget.Toast
 import com.h1rose.aweauto.data.StreamService
+import com.h1rose.aweauto.data.UrlParts
 import com.h1rose.aweauto.ui.AweNav
 import com.h1rose.aweauto.ui.Route
 
@@ -19,38 +20,32 @@ class ShareActivity : Activity() {
         val route = text?.let(::routeFor)
         if (route != null) {
             AweNav.go(route)
-            Toast.makeText(this, "車の画面で開きます", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, R.string.share_opening, Toast.LENGTH_SHORT).show()
         } else {
-            Toast.makeText(this, "対応している配信サイトのリンクを共有してください", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, R.string.share_unsupported, Toast.LENGTH_SHORT).show()
         }
         finish()
     }
 
     companion object {
-        /** http(s)://ホスト/パス?クエリ#フラグメント。共有の文章は日本語などが混ざるので、厳密な URI としては読まない */
-        private val urlPattern = Regex("""https?://([^/?#\s]+)(/[^?#\s]*)?(\?[^#\s]*)?(#\S*)?""")
-
         /** 共有された文章の中のリンクから、車の画面で開く先を決める。対応していないサイトなら null */
         fun routeFor(text: String): Route.Web? {
-            val m = urlPattern.find(text) ?: return null
+            val m = UrlParts.PATTERN.find(text) ?: return null
             val url = m.value
-            val host = m.groupValues[1].substringBefore(':').lowercase()
-            val path = m.groupValues[2]
-            val segments = path.split('/').filter { it.isNotEmpty() }
+            val parts = UrlParts.from(m)
+            val segments = parts.path.split('/').filter { it.isNotEmpty() }
             return when {
-                host == "youtu.be" -> segments.firstOrNull()?.let { youtube("https://m.youtube.com/watch?v=$it") }
-                host == "youtube.com" || host.endsWith(".youtube.com") -> {
+                parts.host == "youtu.be" -> segments.firstOrNull()?.let { youtube("https://m.youtube.com/watch?v=$it") }
+                StreamService.YOUTUBE.ownsHost(parts.host) -> {
                     val shorts = segments.takeIf { it.firstOrNull() == "shorts" }?.getOrNull(1)
                     youtube(
                         if (shorts != null) "https://m.youtube.com/watch?v=$shorts"
                         // スマホ版のページにそろえる (www. や music. のままだと PC 版や別のサイトになる)
-                        else "https://m.youtube.com$path${m.groupValues[3]}${m.groupValues[4]}"
+                        else "https://m.youtube.com${parts.path}${parts.query}${parts.fragment}"
                     )
                 }
                 // それ以外のサイトは StreamService.hosts で見分ける (サイトを足すときは StreamService に書くだけでいい)
-                else -> StreamService.entries
-                    .firstOrNull { s -> s.hosts.any { host == it || host.endsWith(".$it") } }
-                    ?.let { Route.Web(it, url) }
+                else -> StreamService.forUrl(url)?.let { Route.Web(it, url) }
             }
         }
 

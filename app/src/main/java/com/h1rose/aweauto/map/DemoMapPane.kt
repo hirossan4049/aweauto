@@ -10,7 +10,7 @@ import android.view.Surface
  * 格子と大きさを描き、触った位置に点を打つ。
  */
 class DemoMapPane : MapPaneProvider {
-    override val label = "テスト表示"
+    override val label = "MapPaneProvider demo"
 
     private var surface: Surface? = null
     private var width = 0
@@ -45,7 +45,7 @@ class DemoMapPane : MapPaneProvider {
             for (x in 0..width step step) canvas.drawLine(x.toFloat(), 0f, x.toFloat(), height.toFloat(), grid)
             for (y in 0..height step step) canvas.drawLine(0f, y.toFloat(), width.toFloat(), y.toFloat(), grid)
             val text = Paint().apply { color = Color.rgb(0xE3, 0xE3, 0xE8); textSize = 32f; isAntiAlias = true }
-            canvas.drawText("MapPaneProvider テスト  ${width}×$height", 24f, 56f, text)
+            canvas.drawText("MapPaneProvider demo  ${width}×$height", 24f, 56f, text)
             touch?.let { (x, y) ->
                 val dot = Paint().apply {
                     color = if (pressed) Color.rgb(0x8A, 0xB4, 0xF8) else Color.rgb(0x9A, 0xA0, 0xAC)

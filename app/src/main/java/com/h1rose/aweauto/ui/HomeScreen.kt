@@ -1,5 +1,6 @@
 package com.h1rose.aweauto.ui
 
+import androidx.annotation.StringRes
 import androidx.compose.foundation.background
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.horizontalScroll
@@ -40,6 +41,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -52,6 +54,7 @@ import coil3.compose.AsyncImage
 import coil3.compose.rememberAsyncImagePainter
 import com.h1rose.aweauto.data.HistoryItem
 import com.h1rose.aweauto.data.Prefs
+import com.h1rose.aweauto.R
 import com.h1rose.aweauto.data.Shortcut
 import com.h1rose.aweauto.data.StreamService
 import com.h1rose.aweauto.data.shortcuts
@@ -60,7 +63,7 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
-private enum class HomeTab(val label: String) { FOR_YOU("おすすめ"), APPS("アプリ"), LIBRARY("ライブラリ") }
+private enum class HomeTab(@StringRes val label: Int) { FOR_YOU(R.string.tab_for_you), APPS(R.string.tab_apps), LIBRARY(R.string.tab_library) }
 
 @Composable
 fun HomeScreen() {
@@ -105,7 +108,7 @@ private fun TopBar(tab: HomeTab, onTab: (HomeTab) -> Unit) = BoxWithConstraints 
                     .padding(horizontal = if (compact) 12.dp else 16.dp, vertical = 7.dp),
             ) {
                 Text(
-                    t.label,
+                    stringResource(t.label),
                     maxLines = 1,
                     softWrap = false,
                     color = if (selected) AweColors.OnChip else AweColors.OnSurfaceDim,
@@ -128,7 +131,7 @@ private fun TopBar(tab: HomeTab, onTab: (HomeTab) -> Unit) = BoxWithConstraints 
         ) {
             Icon(
                 AweIcons.Map,
-                contentDescription = "地図と並べる",
+                contentDescription = stringResource(R.string.show_map),
                 tint = if (split) AweColors.OnChip else AweColors.OnSurface,
                 modifier = Modifier.size(20.dp),
             )
@@ -138,14 +141,14 @@ private fun TopBar(tab: HomeTab, onTab: (HomeTab) -> Unit) = BoxWithConstraints 
             Modifier.pressScale { AweNav.go(Route.Pair) }.size(36.dp).clip(CircleShape).background(AweColors.SurfaceHigh),
             contentAlignment = Alignment.Center,
         ) {
-            Icon(AweIcons.Cast, contentDescription = "スマホからキャスト", tint = AweColors.OnSurface, modifier = Modifier.size(20.dp))
+            Icon(AweIcons.Cast, contentDescription = stringResource(R.string.cast_from_phone), tint = AweColors.OnSurface, modifier = Modifier.size(20.dp))
         }
         Spacer(Modifier.width(10.dp))
         Box(
             Modifier.pressScale { AweNav.go(Route.Settings) }.size(36.dp).clip(CircleShape).background(AweColors.SurfaceHigh),
             contentAlignment = Alignment.Center,
         ) {
-            Icon(Icons.Filled.Settings, contentDescription = "設定", tint = AweColors.OnSurface, modifier = Modifier.size(20.dp))
+            Icon(Icons.Filled.Settings, contentDescription = stringResource(R.string.settings), tint = AweColors.OnSurface, modifier = Modifier.size(20.dp))
         }
     }
 }
@@ -176,19 +179,19 @@ private fun ForYou(history: List<HistoryItem>) {
     ) {
         item { Hero(history.firstOrNull()) }
         item {
-            Shelf("アプリ") {
+            Shelf(stringResource(R.string.shelf_apps)) {
                 items(StreamService.entries) { AppCard(it, Modifier.width(180.dp)) }
             }
         }
         if (history.isNotEmpty()) {
             item {
-                Shelf("続きを見る") {
+                Shelf(stringResource(R.string.shelf_continue)) {
                     items(history, key = { it.videoId }) { VideoCard(it) }
                 }
             }
         }
         item {
-            Shelf("ピックアップ") {
+            Shelf(stringResource(R.string.shelf_picks)) {
                 items(shortcuts) { ShortcutCard(it) }
             }
         }
@@ -199,9 +202,17 @@ private fun ForYou(history: List<HistoryItem>) {
 @Composable
 private fun Hero(latest: HistoryItem?) {
     val (title, subtitle, action) = if (latest != null) {
-        Triple(latest.title.ifBlank { "最後に見た動画" }, "YouTube ・ 続きから再生", "続きを見る")
+        Triple(
+            latest.title.ifBlank { stringResource(R.string.hero_last_watched) },
+            stringResource(R.string.hero_resume_kicker),
+            stringResource(R.string.hero_resume),
+        )
     } else {
-        Triple("YouTube をひらく", "車の画面向けに最適化した表示で再生します", "ひらく")
+        Triple(
+            stringResource(R.string.hero_open_youtube),
+            stringResource(R.string.hero_open_youtube_desc),
+            stringResource(R.string.open),
+        )
     }
     val open = {
         AweNav.go(Route.Web(StreamService.YOUTUBE, latest?.watchUrl ?: StreamService.YOUTUBE.homeUrl))
@@ -346,8 +357,8 @@ private fun ShortcutCard(shortcut: Shortcut) {
             Icon(shortcut.icon, contentDescription = null, tint = AweColors.OnSurfaceDim, modifier = Modifier.size(20.dp))
         }
         Spacer(Modifier.height(14.dp))
-        Text(shortcut.title, color = AweColors.OnSurface, fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
-        Text(shortcut.subtitle, color = AweColors.OnSurfaceDim, fontSize = 12.sp)
+        Text(stringResource(shortcut.title), color = AweColors.OnSurface, fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
+        Text(shortcut.service.label, color = AweColors.OnSurfaceDim, fontSize = 12.sp)
     }
 }
 
@@ -367,7 +378,7 @@ private fun AppsGrid() {
 private fun Library(history: List<HistoryItem>) {
     if (history.isEmpty()) {
         Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            Text("まだ再生履歴はありません", color = AweColors.OnSurfaceDim, fontSize = 15.sp)
+            Text(stringResource(R.string.library_empty), color = AweColors.OnSurfaceDim, fontSize = 15.sp)
         }
         return
     }

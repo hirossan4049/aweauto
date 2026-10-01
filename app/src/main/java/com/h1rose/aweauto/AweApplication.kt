@@ -22,7 +22,7 @@ class AweApplication : Application() {
         MapLayouts.init(this)
         AdBlocker.init(this) { Prefs.filterLists.value }
         LoungeReceiver.init(this)
-        LoungeReceiver.screenName = "aweauto (車)"
+        LoungeReceiver.screenName = getString(R.string.cast_screen_name)
         if (Prefs.cast.value) {
             LoungeReceiver.start(CastBridge)
             DialServer.start(this)
