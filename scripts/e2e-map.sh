@@ -116,7 +116,7 @@ installed_map_apps() {
       [ "$p" = "$PKG" ] || [ "$p" = com.waze ] && continue
       adb shell cmd package resolve-activity --brief -a android.intent.action.MAIN -c android.intent.category.LAUNCHER "$p" </dev/null 2>/dev/null |
         grep -q / || continue
-      adb shell dumpsys package "$p" </dev/null 2>/dev/null | grep -q ACCESS_MOCK_LOCATION && continue
+      grep -q ACCESS_MOCK_LOCATION <<<"$(adb shell dumpsys package "$p" </dev/null 2>/dev/null)" && continue
       echo "$p"
     done
 }
@@ -130,7 +130,7 @@ check_app() {
   adb shell am force-stop "$PKG"
   if wait_attached "$step" "$app" "$old_id"; then
     sleep 2
-    if adb logcat -d | grep -qE "$LAUNCH_FAILED_LOG"; then
+    if grep -qE "$LAUNCH_FAILED_LOG" <<<"$(adb logcat -d)"; then
       record "$step" FAIL "$app を起動できない"
     else
       check_counts "$step"
@@ -192,7 +192,7 @@ main() {
     echo "車の画面で 分割/PiP の切り替え・左右入れ替え・幅変更・地図のタップを試してください。"
     read -r -p "一通り操作したら Enter: " _
     adb logcat -d -v time >>"$OUT/logcat.txt"
-    if adb logcat -d | grep -qE 'reused=false|Display removed'; then
+    if grep -qE 'reused=false|Display removed' <<<"$(adb logcat -d)"; then
       record resized FAIL "サイズ変更で仮想ディスプレイが作り直された"
     else
       check_counts resized

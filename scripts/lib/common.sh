@@ -39,8 +39,14 @@ map_proc_count() {
   map_pids | awk 'NF { c++ } END { print c + 0 }'
 }
 
+# adb の出力は一度変数に受けてから絞り込む。パイプで途中まで読んで止めると (grep -q / awk の exit)、
+# adb が SIGPIPE で終わり、set -o pipefail のスクリプト全体が 141 で落ちることがあるため
+dumpsys_() { adb shell dumpsys "$@" 2>/dev/null | tr -d '\r'; }
+
 map_display_count() {
-  adb shell dumpsys display 2>/dev/null | tr -d '\r' | grep -c "DisplayDeviceInfo{\"$MAP_VD_NAME\"" || true
+  local out
+  out="$(dumpsys_ display)"
+  grep -c "DisplayDeviceInfo{\"$MAP_VD_NAME\"" <<<"$out" || true
 }
 
 kill_map_services() {
@@ -61,15 +67,17 @@ set_pref_string() {
 # 地図枠の仮想ディスプレイで動いているアプリのパッケージ (無ければ空)。
 # ログは同じアプリ ID のログが多いと Android に捨てられることがあるので、端末の状態から直接見る
 map_display_id() {
-  adb shell dumpsys display 2>/dev/null | tr -d '\r' |
-    awk -v name="$MAP_VD_NAME" '/^  Display [0-9]+:/ { d = $2 } $0 ~ "mBaseDisplayInfo=DisplayInfo\\{\"" name "\"" { sub(":", "", d); print d; exit }'
+  local out
+  out="$(dumpsys_ display)"
+  awk -v name="$MAP_VD_NAME" '/^  Display [0-9]+:/ { d = $2 } $0 ~ "mBaseDisplayInfo=DisplayInfo\\{\"" name "\"" { sub(":", "", d); print d; exit }' <<<"$out"
 }
 
 map_display_package() {
   local id="${1:-$(map_display_id)}"
   [ -z "$id" ] && return 0
-  adb shell dumpsys activity activities 2>/dev/null | tr -d '\r' |
-    awk -v id="#$id" '/^Display #/ { on = ($2 == id) } on && /TaskRecord\{/ { for (i = 1; i <= NF; i++) if ($i ~ /^A=/) { sub("A=", "", $i); print $i; exit } }'
+  local out
+  out="$(dumpsys_ activity activities)"
+  awk -v id="#$id" '/^Display #/ { on = ($2 == id) } on && /TaskRecord\{/ { for (i = 1; i <= NF; i++) if ($i ~ /^A=/) { sub("A=", "", $i); print $i; exit } }' <<<"$out"
 }
 
 # 地図枠に pkg (省略なら何でも) が出るまで待つ (出たら 0、timeout 秒で 1)。
@@ -154,7 +162,9 @@ dhu_stop() {
 
 # aweauto が車の画面 (実車 or DHU) に出ているか。出ているときだけ aweauto の仮想ディスプレイがある
 car_screen_active() {
-  adb shell dumpsys display 2>/dev/null | grep -q 'DisplayDeviceInfo{"aweauto"'
+  local out
+  out="$(dumpsys_ display)"
+  grep -q 'DisplayDeviceInfo{"aweauto"' <<<"$out"
 }
 
 # ---- ログ ----
@@ -163,7 +173,9 @@ car_screen_active() {
 wait_log() {
   local pattern="$1" timeout="${2:-20}" i
   for i in $(seq 1 "$timeout"); do
-    adb logcat -d 2>/dev/null | grep -qE "$pattern" && return 0
+    local out
+    out="$(adb logcat -d 2>/dev/null)"
+    grep -qE "$pattern" <<<"$out" && return 0
     sleep 1
   done
   return 1
