@@ -158,9 +158,11 @@ class NativeMapInputUserService : IMapInputService.Stub {
                 arrayOf(
                     "sh",
                     "-c",
-                    // 検索語などは渡さず、ランチャーから開いたときと同じように前回の状態で開く
+                    // 検索語などは渡さず、ランチャーから開いたときと同じように前回の状態で開く。
+                    // -p だけだと解決できないアプリ (Waze など) があるので、ランチャーの画面を名前で指定する
                     "am start --display $displayId -a android.intent.action.MAIN " +
-                        "-c android.intent.category.LAUNCHER -p $packageName",
+                        "-c android.intent.category.LAUNCHER " +
+                        (launcherComponent(packageName)?.let { "-n '$it'" } ?: "-p $packageName"),
                 ),
             ).apply {
                 errorStream.bufferedReader().use {
@@ -173,6 +175,11 @@ class NativeMapInputUserService : IMapInputService.Stub {
             Log.w(INPUT_TAG, "launch map failed: $packageName display=$displayId", it)
         }
     }
+
+    private fun launcherComponent(packageName: String): String? =
+        runCatching {
+            context?.packageManager?.getLaunchIntentForPackage(packageName)?.component?.flattenToShortString()
+        }.getOrNull()
 
     private fun injectMotion(action: Int, downTime: Long, eventTime: Long, x: Float, y: Float) {
         val event = MotionEvent.obtain(downTime, eventTime, action, x, y, 0).apply {

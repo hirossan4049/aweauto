@@ -22,20 +22,6 @@ private const val TAG = "NativeAppMapPane"
 private const val INPUT_BIND_TIMEOUT_MS = 2_000L
 private const val MAX_PENDING_INPUTS = 8
 
-enum class NativeMapApp(
-    val id: String,
-    val label: String,
-    val packageName: String,
-) {
-    Google("google", "Google Maps", "com.google.android.apps.maps"),
-    Yahoo("yahoo", "Yahoo! MAP", "jp.co.yahoo.android.apps.map");
-
-    companion object {
-        fun fromId(id: String?): NativeMapApp =
-            entries.firstOrNull { it.id == id } ?: Google
-    }
-}
-
 /**
  * 左の地図枠に端末の地図アプリ本体を起動する。
  *
@@ -44,9 +30,11 @@ enum class NativeMapApp(
  */
 class NativeAppMapPane(
     context: Context,
-    private val app: NativeMapApp,
+    app: NativeMapApp,
 ) : MapPaneProvider {
-    override val label = app.label
+    @Volatile
+    private var app: NativeMapApp = app
+    override val label get() = app.label
 
     private val appContext = context.applicationContext
     private val inputScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
@@ -103,6 +91,22 @@ class NativeAppMapPane(
             return
         }
         pendingAttach = PendingAttach(surface, width, height, densityDpi)
+        ensureInputService()
+        inputService?.let { service -> inputScope.launch { attachRemote(service) } }
+    }
+
+    /**
+     * 地図枠に出すアプリを切り替える。同じ UserService・仮想ディスプレイのまま次のアプリを起動する。
+     * (ペインを作り直すと、同じ UserService を unbind 直後に bind し直すことになり、接続の通知が届かなくなる)
+     */
+    fun switchApp(next: NativeMapApp) {
+        if (next.packageName == app.packageName) return
+        app = next
+        if (pendingAttach == null) return
+        if (!isInstalled(next.packageName)) {
+            Log.w(TAG, "${next.packageName} is not installed")
+            return
+        }
         ensureInputService()
         inputService?.let { service -> inputScope.launch { attachRemote(service) } }
     }

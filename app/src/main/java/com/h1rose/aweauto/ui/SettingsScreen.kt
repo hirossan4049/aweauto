@@ -5,6 +5,8 @@ import android.content.ClipboardManager
 import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -53,7 +55,7 @@ import com.h1rose.aweauto.adblock.AdBlocker
 import com.h1rose.aweauto.map.DemoMapPane
 import com.h1rose.aweauto.map.MapPanes
 import com.h1rose.aweauto.map.NativeAppMapPane
-import com.h1rose.aweauto.map.NativeMapApp
+import com.h1rose.aweauto.map.NavApps
 import com.h1rose.aweauto.adblock.FilterList
 import com.h1rose.aweauto.cast.CastStatus
 import com.h1rose.aweauto.cast.LoungeReceiver
@@ -169,16 +171,22 @@ fun SettingsScreen(onBack: (() -> Unit)?) {
             }
             item { SectionLabel("拡張 (Shizuku)", Icons.Outlined.Extension) }
             item {
+                val navApps = remember { NavApps.installed(context) }
+                val selectedApp = remember(mapApp) { NavApps.resolve(context, mapApp) }
                 ChoiceRow(
                     title = "地図枠に出すアプリ",
-                    description = "分割表示の左側に、WebView ではなく端末の地図アプリ本体を起動します。Shizuku の接続が必要です",
-                    options = NativeMapApp.entries.map { it.id to it.label },
-                    selected = mapApp,
-                    onSelect = {
-                        Prefs.setMapApp(it)
+                    description = "分割表示の地図枠に、端末に入っている地図・カーナビアプリ本体を起動します。Shizuku の接続が必要です。" +
+                        "地図枠に出ないアプリは、PC で scripts/aw.sh resizable を一度実行すると出せることがあります",
+                    options = navApps.map { it.packageName to it.label },
+                    selected = selectedApp.packageName,
+                    onSelect = { pkg ->
+                        Prefs.setMapApp(pkg)
                         context.getSharedPreferences("aweauto", android.content.Context.MODE_PRIVATE)
                             .edit().putBoolean("demo_map_pane", false).apply()
-                        MapPanes.register(NativeAppMapPane(context, NativeMapApp.fromId(it)))
+                        val next = NavApps.resolve(context, pkg)
+                        val current = MapPanes.provider.value
+                        if (current is NativeAppMapPane) current.switchApp(next)
+                        else MapPanes.register(NativeAppMapPane(context, next))
                     },
                 )
             }
@@ -242,7 +250,7 @@ fun SettingsScreen(onBack: (() -> Unit)?) {
                         onChange = {
                             context.getSharedPreferences("aweauto", android.content.Context.MODE_PRIVATE)
                                 .edit().putBoolean("demo_map_pane", it).apply()
-                            MapPanes.register(if (it) DemoMapPane() else NativeAppMapPane(context, NativeMapApp.fromId(mapApp)))
+                            MapPanes.register(if (it) DemoMapPane() else NativeAppMapPane(context, NavApps.resolve(context, mapApp)))
                         },
                     )
                 }
@@ -415,6 +423,7 @@ private fun Pill(label: String, primary: Boolean = false, onClick: () -> Unit) {
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun <T> ChoiceRow(
     title: String,
@@ -433,7 +442,11 @@ private fun <T> ChoiceRow(
         Text(title, color = AweColors.OnSurface, fontSize = 16.sp)
         Text(description, color = AweColors.OnSurfaceDim, fontSize = 13.sp)
         Spacer(Modifier.height(12.dp))
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        // 地図アプリなど選択肢が多いときは折り返す
+        FlowRow(
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
             options.forEach { (value, label) ->
                 val on = value == selected
                 Box(
