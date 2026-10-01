@@ -2,8 +2,9 @@ package com.h1rose.aweauto.map
 
 import android.annotation.SuppressLint
 import android.view.MotionEvent
-import android.view.SurfaceHolder
-import android.view.SurfaceView
+import android.graphics.SurfaceTexture
+import android.view.Surface
+import android.view.TextureView
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -19,7 +20,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.key
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
@@ -31,12 +31,13 @@ import com.h1rose.aweauto.ui.LocalIsCar
 
 /**
  * 地図枠。登録された [MapPaneProvider] に描画先とタッチを渡す。
- * [overlay] は地図が小窓 (PiP) で全面の画面の上に重なるとき true。
- * SurfaceView は既定ではウィンドウの下に描かれ、全面の画面の上に小さく出すと画面全体が黒く抜けてしまうので、
- * そのときだけウィンドウより上 (setZOrderOnTop) に出す。この状態ではウィンドウに描いたものは地図の下に隠れる。
+ *
+ * 描画先には TextureView を使う。SurfaceView は重なり順を変えるたびに作り直しが必要で、
+ * そのたびに描画先が壊れて detach → attach が起き、中身 (他アプリの表示) が不安定になるため。
+ * TextureView はふつうの View と同じ順で重なり、表示中は大きさが変わっても描画先を保ち続ける。
  */
 @Composable
-fun MapPane(modifier: Modifier = Modifier, overlay: Boolean = false) {
+fun MapPane(modifier: Modifier = Modifier) {
     val provider by MapPanes.provider.collectAsState()
     Box(modifier.background(AweColors.Surface)) {
         val p = provider
@@ -45,31 +46,32 @@ fun MapPane(modifier: Modifier = Modifier, overlay: Boolean = false) {
         } else if (!LocalIsCar.current) {
             // スマホのプレビューと車の画面で同じ中身を取り合わないよう、中身は車の画面にだけ出す
             Placeholder(title = "地図は車の画面に表示中", detail = p.label)
-        } else key(overlay) {
-            // 重なり順は作成時にしか変えられないので、切り替え時は SurfaceView を作り直す
+        } else {
             AndroidView(
                 modifier = Modifier.fillMaxSize(),
-                factory = { ctx -> ProviderSurfaceView(ctx, p).apply { setZOrderOnTop(overlay) } },
+                factory = { ctx -> ProviderTextureView(ctx, p) },
                 update = { it.provider = p },
-                onRelease = { it.provider?.detach() },
+                onRelease = { it.release() },
             )
         }
     }
 }
 
 @SuppressLint("ViewConstructor")
-private class ProviderSurfaceView(
+private class ProviderTextureView(
     context: android.content.Context,
     initial: MapPaneProvider,
-) : SurfaceView(context), SurfaceHolder.Callback {
+) : TextureView(context), TextureView.SurfaceTextureListener {
     var provider: MapPaneProvider? = initial
         set(value) {
             if (field === value) return
-            field?.detach()
+            if (attached != null) field?.detach()
             field = value
             attached = null
             scheduleAttach()
         }
+
+    private var surface: Surface? = null
 
     /** 最後に attach した大きさ。同じなら呼び直さない */
     private var attached: Pair<Int, Int>? = null
@@ -77,17 +79,34 @@ private class ProviderSurfaceView(
     private val attachNow = Runnable { attachIfReady() }
 
     init {
-        holder.addCallback(this)
+        surfaceTextureListener = this
+        isOpaque = false
     }
 
-    override fun surfaceCreated(holder: SurfaceHolder) = Unit
-
-    override fun surfaceChanged(holder: SurfaceHolder, format: Int, width: Int, height: Int) {
+    override fun onSurfaceTextureAvailable(texture: SurfaceTexture, width: Int, height: Int) {
+        surface = Surface(texture)
         surfaceSize = width to height
         scheduleAttach()
     }
 
-    override fun surfaceDestroyed(holder: SurfaceHolder) {
+    override fun onSurfaceTextureSizeChanged(texture: SurfaceTexture, width: Int, height: Int) {
+        // 描画先 (Surface) は同じまま。大きさが落ち着いたら同じ Surface で attach し直して大きさだけ伝える
+        surfaceSize = width to height
+        scheduleAttach()
+    }
+
+    override fun onSurfaceTextureDestroyed(texture: SurfaceTexture): Boolean {
+        removeCallbacks(attachNow)
+        if (attached != null) provider?.detach()
+        attached = null
+        surface?.release()
+        surface = null
+        return true
+    }
+
+    override fun onSurfaceTextureUpdated(texture: SurfaceTexture) = Unit
+
+    fun release() {
         removeCallbacks(attachNow)
         if (attached != null) provider?.detach()
         attached = null
@@ -104,11 +123,12 @@ private class ProviderSurfaceView(
 
     private fun attachIfReady() {
         val p = provider ?: return
+        val s = surface?.takeIf { it.isValid } ?: return
         val (w, h) = surfaceSize
-        if (w < MIN_SIZE_PX || h < MIN_SIZE_PX || holder.surface?.isValid != true) return
+        if (w < MIN_SIZE_PX || h < MIN_SIZE_PX) return
         if (attached == surfaceSize) return
         attached = surfaceSize
-        p.attach(holder.surface, w, h, mapDensityDpi(w, h, resources.displayMetrics.densityDpi))
+        p.attach(s, w, h, mapDensityDpi(w, h, resources.displayMetrics.densityDpi))
     }
 
     @SuppressLint("ClickableViewAccessibility")

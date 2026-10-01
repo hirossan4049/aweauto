@@ -77,7 +77,7 @@ fun AweRoot() {
 
             // 小窓の方を手前に (zIndex)。同じ高さのときは後に書いた方が上になる
             Box(Modifier.placed(mapAnim).zIndex(if (pipIsMap) 1f else 0f)) {
-                MapPane(Modifier.fillMaxSize(), overlay = pipIsMap)
+                MapPane(Modifier.fillMaxSize())
             }
             // Android Auto の戻るボタンは画面の右上に重なる。右上に接していない側は空けておく必要がない
             val touchesTopEnd = screenRect.x + screenRect.w >= maxWidth - 1.dp && screenRect.y < 1.dp

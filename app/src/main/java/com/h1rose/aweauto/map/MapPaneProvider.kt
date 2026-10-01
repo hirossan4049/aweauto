@@ -26,6 +26,7 @@ interface MapPaneProvider {
     /**
      * 地図枠が表示された / サイズが変わった。surface はこの大きさ (px) で描く。
      * 並べ方の切り替え中は呼ばれず、大きさが落ち着いてから 1 回だけ呼ばれる。
+     * 大きさだけが変わったときは、前回と同じ surface で呼ばれる (描画先はそのまま、大きさだけ変える)。
      */
     fun attach(surface: Surface, width: Int, height: Int, densityDpi: Int)
 
