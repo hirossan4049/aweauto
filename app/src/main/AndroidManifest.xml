@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
 
     <uses-permission android:name="android.permission.INTERNET" />
     <!-- 同じ Wi-Fi / テザリング上の YouTube アプリから見つけてもらう (DIAL/SSDP) -->
@@ -68,10 +69,12 @@
           Car App Library の NAVIGATION カテゴリにすると地図用の Surface を丸ごと貰える。
           そこに VirtualDisplay + Presentation で任意の UI を描く。
           Play ストア外のナビアプリなので、Android Auto 側で「提供元不明のアプリ」の許可が必要。
+          Android Auto 本体から呼ばれるので権限は付けずに公開する (Car App Library の決まり。接続元は HostValidator で見る)
         -->
         <service
             android:name=".car.AweCarAppService"
-            android:exported="true">
+            android:exported="true"
+            tools:ignore="ExportedService">
             <intent-filter>
                 <action android:name="androidx.car.app.CarAppService" />
                 <category android:name="androidx.car.app.category.NAVIGATION" />

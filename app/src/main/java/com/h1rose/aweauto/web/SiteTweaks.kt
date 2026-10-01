@@ -67,7 +67,7 @@ class SiteTweaks(
 
     /** WebView 生成直後に呼ぶ。対応していれば以後の全ページ遷移で読み込み前に注入される */
     fun install(webView: WebView) {
-        if (!usesDocumentStart || script.isBlank()) return
+        if (script.isBlank() || !WebViewFeature.isFeatureSupported(WebViewFeature.DOCUMENT_START_SCRIPT)) return
         val origins = service.hosts.map { "https://$it" }.toSet()
         WebViewCompat.addDocumentStartJavaScript(webView, script, origins)
     }

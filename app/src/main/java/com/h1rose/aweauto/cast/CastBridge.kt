@@ -5,24 +5,27 @@ import android.webkit.WebView
 import com.h1rose.aweauto.data.StreamService
 import com.h1rose.aweauto.ui.AweNav
 import com.h1rose.aweauto.ui.Route
+import java.lang.ref.WeakReference
 
 /**
  * キャストのコマンドを YouTube の WebView に流し、WebView の再生状態を Lounge に返す。
  * 表示中の YouTube WebView は [attach] で登録される。
  */
 object CastBridge : LoungePlayer {
-    private var webView: WebView? = null
+    // 画面を閉じた WebView をいつまでも持ち続けないよう、弱い参照で持つ
+    private var webViewRef = WeakReference<WebView>(null)
+    private val webView: WebView? get() = webViewRef.get()
 
     /** JS から呼ばれる窓口。window.AweCast.onState(...) */
     const val JS_NAME = "AweCast"
 
     fun attach(view: WebView) {
-        webView = view
+        webViewRef = WeakReference(view)
         view.addJavascriptInterface(JsInterface, JS_NAME)
     }
 
     fun detach(view: WebView) {
-        if (webView === view) webView = null
+        if (webView === view) webViewRef.clear()
     }
 
     override fun load(videoId: String, startSec: Double) {

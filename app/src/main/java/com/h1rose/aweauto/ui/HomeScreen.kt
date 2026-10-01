@@ -186,7 +186,7 @@ private fun ForYou(history: List<HistoryItem>) {
         if (history.isNotEmpty()) {
             item {
                 Shelf(stringResource(R.string.shelf_continue)) {
-                    items(history, key = { it.videoId }) { VideoCard(it) }
+                    items(history, key = { it.videoId }) { VideoCard(it, Modifier.width(200.dp)) }
                 }
             }
         }
@@ -317,7 +317,7 @@ private fun AppCard(service: StreamService, modifier: Modifier = Modifier) {
 }
 
 @Composable
-private fun VideoCard(item: HistoryItem, modifier: Modifier = Modifier.width(200.dp)) {
+private fun VideoCard(item: HistoryItem, modifier: Modifier = Modifier) {
     Column(modifier.pressScale { AweNav.go(Route.Web(StreamService.YOUTUBE, item.watchUrl)) }) {
         AsyncImage(
             model = item.thumbnailUrl,
@@ -388,6 +388,6 @@ private fun Library(history: List<HistoryItem>) {
         horizontalArrangement = Arrangement.spacedBy(14.dp),
         verticalArrangement = Arrangement.spacedBy(18.dp),
     ) {
-        items(history, key = { it.videoId }) { VideoCard(it, Modifier) }
+        items(history, key = { it.videoId }) { VideoCard(it) }
     }
 }

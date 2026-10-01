@@ -1,5 +1,6 @@
 package com.h1rose.aweauto.map
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.hardware.display.DisplayManager
 import android.hardware.display.VirtualDisplay
@@ -120,6 +121,9 @@ class NativeMapInputUserService : IMapInputService.Stub {
         injectKey(KeyEvent.ACTION_UP, down, down + 40)
     }
 
+    // shell 権限の UserService の中でだけ使う。InputManager の公開 API には、表示先のディスプレイを
+    // 指定して入力を送る方法が無いため、システムの非公開 API (ServiceManager / IInputManager) を使う
+    @SuppressLint("PrivateApi", "DiscouragedPrivateApi")
     private fun createInputForwarder(displayId: Int) {
         runCatching {
             val inputBinder = Class.forName("android.os.ServiceManager")

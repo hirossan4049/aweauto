@@ -30,6 +30,14 @@ android {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
+    lint {
+        // 警告も失敗として扱い、lint の指摘が 0 件の状態を保つ (CI でも同じ)
+        warningsAsErrors = true
+        abortOnError = true
+        // 「新しい版がある」は Google が版を出すたびに出るので無効にする。
+        // 今より新しい版の多くは compileSdk 36 と AGP 8.9 以上が必要なので、上げるときはまとめて上げる
+        disable += "GradleDependency"
+    }
     testOptions {
         // JVM のテストでも android.util.Log などを呼べるようにする (何もしない)
         unitTests.isReturnDefaultValues = true
@@ -54,10 +62,10 @@ dependencies {
     implementation("androidx.compose.ui:ui-tooling-preview")
     debugImplementation("androidx.compose.ui:ui-tooling")
 
-    implementation("androidx.activity:activity-compose:1.9.3")
+    implementation("androidx.activity:activity-compose:1.10.1")
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.8.7")
-    implementation("androidx.car.app:app:1.4.0")
-    implementation("androidx.webkit:webkit:1.12.1")
+    implementation("androidx.car.app:app:1.7.0")
+    implementation("androidx.webkit:webkit:1.14.0")
 
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
     implementation("com.google.zxing:core:3.5.3")
