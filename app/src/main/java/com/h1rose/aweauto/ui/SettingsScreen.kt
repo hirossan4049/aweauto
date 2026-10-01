@@ -183,6 +183,15 @@ private fun LazyListScope.networkSection(context: Context, offlineCache: Boolean
 private fun LazyListScope.hudSection(context: Context, hudCustom: Boolean) {
     item { SectionLabel(stringResource(R.string.section_hud), AweIcons.Navigation) }
     item {
+        val remote by Prefs.remoteButtons.collectAsState()
+        SettingRow(
+            title = stringResource(R.string.remote_buttons_title),
+            description = stringResource(R.string.remote_buttons_desc),
+            checked = remote,
+            onChange = { Prefs.setRemoteButtons(it) },
+        )
+    }
+    item {
         val hud by Prefs.hud.collectAsState()
         SettingRow(
             title = stringResource(R.string.hud_title),

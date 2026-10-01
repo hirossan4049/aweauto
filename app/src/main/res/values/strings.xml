@@ -168,6 +168,13 @@
     <string name="cast_copied">Copied. Paste it into Link with TV code</string>
     <string name="qr_code">QR code</string>
 
+    <!-- 画面に触れない車 -->
+    <string name="remote_buttons_title">Buttons for screens you can\'t touch</string>
+    <string name="remote_buttons_desc">For cars with a knob, touchpad or buttons only. Adds Previous / Next / Select to the top-right buttons to move around the screen and choose</string>
+    <string name="remote_previous">Previous</string>
+    <string name="remote_next">Next</string>
+    <string name="remote_select">Select</string>
+
     <!-- YouTube のアカウント -->
     <string name="youtube_account_title">YouTube account</string>
     <string name="youtube_account_signed_in">Signed in. The car screen\'s YouTube uses this account</string>

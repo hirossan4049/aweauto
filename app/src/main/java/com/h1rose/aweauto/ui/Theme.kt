@@ -1,9 +1,12 @@
 package com.h1rose.aweauto.ui
 
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.foundation.interaction.collectIsPressedAsState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.runtime.Composable
@@ -48,9 +51,12 @@ fun AweTheme(content: @Composable () -> Unit) {
 fun Modifier.pressScale(onClick: () -> Unit): Modifier = composed {
     val interaction = remember { MutableInteractionSource() }
     val pressed by interaction.collectIsPressedAsState()
+    // 画面に触れない車で「前へ・次へ」で選んでいるところ (キー操作のときだけ枠を出す)
+    val focused by interaction.collectIsFocusedAsState()
     val scale by animateFloatAsState(if (pressed) 0.94f else 1f, label = "pressScale")
     this
         .graphicsLayer { scaleX = scale; scaleY = scale }
+        .then(if (focused) Modifier.border(3.dp, AweColors.Accent, RoundedCornerShape(14.dp)) else Modifier)
         .clickable(interactionSource = interaction, indication = null, onClick = onClick)
 }
 

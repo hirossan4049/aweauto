@@ -43,6 +43,7 @@ class CarPresentation(
     override val viewModelStore: ViewModelStore get() = store
 
     val touch = TouchInjector { window?.decorView }
+    val remote = FocusRemote { window?.decorView }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)

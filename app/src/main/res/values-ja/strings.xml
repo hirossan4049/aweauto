@@ -162,6 +162,13 @@
     <string name="cast_copied">コピーしました。テレビコードでリンク の欄に貼り付けてください</string>
     <string name="qr_code">QR コード</string>
 
+    <!-- 画面に触れない車 -->
+    <string name="remote_buttons_title">画面に触れない車向けの操作ボタン</string>
+    <string name="remote_buttons_desc">ダイヤル・タッチパッド・ボタンで操作する車向け。右上のボタンに「前へ・次へ・決定」を足して、画面の中を移動して選べるようにします</string>
+    <string name="remote_previous">前へ</string>
+    <string name="remote_next">次へ</string>
+    <string name="remote_select">決定</string>
+
     <!-- YouTube のアカウント -->
     <string name="youtube_account_title">YouTube のアカウント</string>
     <string name="youtube_account_signed_in">ログイン済み。車の画面の YouTube もこのアカウントで開きます</string>

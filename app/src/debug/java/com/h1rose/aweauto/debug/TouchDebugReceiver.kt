@@ -22,6 +22,16 @@ class TouchDebugReceiver : BroadcastReceiver() {
             sampleMainThread(intent.getIntExtra("seconds", 5))
             return
         }
+        if (intent.getStringExtra("cmd") == "remote") {
+            // 画面に触れない車向けの「前へ・次へ・決定」 (scripts/aw.sh remote prev|next|select)
+            val remote = CarDisplayHost.remote ?: return
+            when (intent.getStringExtra("key")) {
+                "prev" -> remote.previous()
+                "next" -> remote.next()
+                "select" -> remote.select()
+            }
+            return
+        }
         val touch = CarDisplayHost.touch
         if (touch == null) {
             Log.w(TAG, "car screen is not shown")
