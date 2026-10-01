@@ -114,10 +114,3 @@ html.watch-scroll #movie_player video.html5-main-video {
   height: 100% !important;
   object-fit: contain !important;
 }
-
-/* 画面に触れない車の「前へ・次へ」で選んでいるところ (キー操作のときだけ出る) */
-:focus-visible {
-  outline: 3px solid #8ab4f8 !important;
-  outline-offset: 2px !important;
-  border-radius: 8px;
-}

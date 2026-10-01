@@ -45,9 +45,6 @@ object Prefs {
     private val _devMute = MutableStateFlow(false)
     val devMute: StateFlow<Boolean> = _devMute.asStateFlow()
     /** 地図枠のアプリのナビ案内を車の HUD・メーターに送る */
-    /** 画面に触れない車向けに、右上の操作ボタンを「前へ・次へ・決定・戻る」にする */
-    private val _remoteButtons = MutableStateFlow(false)
-    val remoteButtons: StateFlow<Boolean> = _remoteButtons.asStateFlow()
     private val _hud = MutableStateFlow(true)
     val hud: StateFlow<Boolean> = _hud.asStateFlow()
     /** ナビをしていないときに HUD に好きな文字を出す */
@@ -81,7 +78,6 @@ object Prefs {
         ShizukuState.autoRestart = _shizukuAutoRestart.value
         _splitMap.value = sp.getBoolean("split_map", false)
         _hud.value = sp.getBoolean("hud", true)
-        _remoteButtons.value = sp.getBoolean("remote_buttons", false)
         _hudCustom.value = sp.getBoolean("hud_custom", false)
         _hudCustomText.value = sp.getString("hud_custom_text", HUD_CUSTOM_DEFAULT) ?: HUD_CUSTOM_DEFAULT
         _mapApp.value = sp.getString("map_app", "google") ?: "google"
@@ -103,11 +99,6 @@ object Prefs {
     fun setMapApp(id: String) {
         sp.edit().putString("map_app", id).apply()
         _mapApp.value = id
-    }
-
-    fun setRemoteButtons(enabled: Boolean) {
-        sp.edit().putBoolean("remote_buttons", enabled).apply()
-        _remoteButtons.value = enabled
     }
 
     fun setHud(enabled: Boolean) {

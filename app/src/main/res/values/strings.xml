@@ -19,8 +19,6 @@
     <string name="google_maps">Google Maps</string>
 
     <!-- スマホ側の画面・共有 -->
-    <string name="phone_header_title">The car screen is showing in Android Auto</string>
-    <string name="phone_header_desc">Change settings here. They apply to the car screen right away.</string>
     <string name="share_opening">Opening on the car screen</string>
     <string name="share_unsupported">Share a link from a supported streaming site</string>
 
@@ -60,6 +58,10 @@
     <string name="map_not_configured_detail">Register a MapPaneProvider with MapPanes.register(…) to show it here</string>
 
     <!-- 設定 -->
+    <string name="details_title">More settings</string>
+    <string name="details_desc">Site tweaks, casting, saving episodes, HUD text, Shizuku, filter lists, history</string>
+    <string name="section_saving">Saving and read-ahead</string>
+    <string name="section_filter_lists">Ad-block filter lists</string>
     <string name="section_optimize">Display tweaks</string>
     <string name="optimize_title">Tune %1$s for the car screen</string>
     <string name="optimize_youtube">Dark theme, 3-column grid, full-bleed player, auto-unmute. Hides ads, Shorts and the bottom tab bar</string>
@@ -69,7 +71,6 @@
     <string name="cast_receive_title">Receive casts from the YouTube app</string>
     <string name="cast_receive_desc">Once linked with a TV code, the cast button plays here even when you\'re not on the same Wi-Fi</string>
 
-    <string name="section_network">Network and buffering</string>
     <string name="max_height_title">Quality cap</string>
     <string name="max_height_desc">Lower quality buffers further on the same data and stalls less on a weak signal</string>
     <string name="max_height_auto">Auto</string>
@@ -102,7 +103,7 @@
 
     <string name="section_shizuku">Extensions (Shizuku)</string>
     <string name="map_app_title">Map pane app</string>
-    <string name="map_app_desc">Runs an installed map or navigation app in the split view\'s map pane. Needs Shizuku. If an app doesn\'t appear, running scripts/aw.sh resizable once from a PC may help</string>
+    <string name="map_app_desc">Runs an installed map or navigation app beside the video. Needs Shizuku</string>
     <string name="shizuku">Shizuku</string>
     <string name="shizuku_ready">Connected</string>
     <string name="shizuku_no_permission">Running. aweauto needs permission</string>
@@ -123,7 +124,6 @@
     <string name="dev_demo_map_title">Test pattern in the map pane (development)</string>
     <string name="dev_demo_map_desc">Checks the MapPaneProvider surface and touch handling</string>
 
-    <string name="section_adblock">Ad blocking</string>
     <string name="adblock_title">Ad blocking</string>
     <string name="adblock_desc">Blocks domains on the filter lists and removes YouTube video ads</string>
     <string name="filter_adguard_dns">AdGuard DNS filter</string>
@@ -168,12 +168,16 @@
     <string name="cast_copied">Copied. Paste it into Link with TV code</string>
     <string name="qr_code">QR code</string>
 
-    <!-- 画面に触れない車 -->
-    <string name="remote_buttons_title">Buttons for screens you can\'t touch</string>
-    <string name="remote_buttons_desc">For cars with a knob, touchpad or buttons only. Adds Previous / Next / Select to the top-right buttons to move around the screen and choose</string>
-    <string name="remote_previous">Previous</string>
-    <string name="remote_next">Next</string>
-    <string name="remote_select">Select</string>
+    <!-- スマホのリモコン -->
+    <string name="remote_car_screen">On the car screen</string>
+    <string name="remote_play">Play</string>
+    <string name="remote_pause">Pause</string>
+    <string name="remote_rewind">Back 10 seconds</string>
+    <string name="remote_forward">Forward 10 seconds</string>
+    <string name="remote_search_hint">Search %1$s</string>
+    <string name="remote_map">Map</string>
+    <string name="remote_map_show">Show</string>
+    <string name="remote_map_hide">Hide</string>
 
     <!-- YouTube のアカウント -->
     <string name="youtube_account_title">YouTube account</string>

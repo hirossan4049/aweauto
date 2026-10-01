@@ -43,8 +43,6 @@ Shizuku
                      指を dx,dy ずつ count 回 (16ms ごと) 動かす。vy を付けると最後にその速さでフリング
                      dy が正なら指は上へ (コンテンツは下へスクロール)
   sample [秒]        メインスレッドが何をしているかを数える (debug ビルドのみ)
-  remote prev|next|select [回数]
-                     画面に触れない車向けの「前へ・次へ・決定」を押す (debug ビルドのみ)
 
 開発用
   e2e-map            ネイティブ地図枠の実機 E2E (再起動・サイズ変更・残プロセス確認)
@@ -166,16 +164,6 @@ cmd_touch() {
   esac
 }
 
-# 画面に触れない車向けの「前へ・次へ・決定」を押す (debug ビルドのみ)
-cmd_remote() {
-  need_device
-  case "${1:-}" in prev | next | select) ;; *) die "使い方: scripts/aw.sh remote prev|next|select [回数]" ;; esac
-  local i
-  for i in $(seq 1 "${2:-1}"); do
-    adb shell am broadcast -a com.h1rose.aweauto.debug.TOUCH -n "$PKG/.debug.TouchDebugReceiver" --es cmd remote --es key "$1" >/dev/null
-  done
-}
-
 # メインスレッドが何をしているかを数秒数える (debug ビルドのみ)
 cmd_sample() {
   need_device
@@ -229,7 +217,6 @@ main() {
     mute) cmd_mute "$@" ;;
     touch) cmd_touch "$@" ;;
     sample) cmd_sample "$@" ;;
-    remote) cmd_remote "$@" ;;
     help | -h | --help) usage ;;
     *) echo "不明なコマンド: $cmd" >&2; usage; exit 1 ;;
   esac

@@ -11,13 +11,7 @@ import androidx.car.app.model.CarIcon
 import androidx.car.app.model.Template
 import androidx.car.app.navigation.model.NavigationTemplate
 import androidx.car.app.validation.HostValidator
-import androidx.annotation.DrawableRes
-import androidx.annotation.StringRes
 import androidx.core.graphics.drawable.IconCompat
-import androidx.lifecycle.lifecycleScope
-import androidx.lifecycle.repeatOnLifecycle
-import kotlinx.coroutines.flow.drop
-import kotlinx.coroutines.launch
 import com.h1rose.aweauto.R
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
@@ -56,10 +50,6 @@ class AweCarAppService : CarAppService() {
 private class SurfaceScreen(carContext: CarContext) : Screen(carContext) {
     init {
         SurfaceRenderer(carContext, lifecycle)
-        // 操作ボタンの設定が変わったら、右上のボタンを並べ直す
-        lifecycleScope.launch {
-            repeatOnLifecycle(Lifecycle.State.CREATED) { Prefs.remoteButtons.drop(1).collect { invalidate() } }
-        }
         // 車側の割り込み (バックカメラなど) で画面が隠れると ON_STOP、戻ると ON_START が来る
         lifecycle.addObserver(
             LifecycleEventObserver { _, event ->
@@ -73,22 +63,14 @@ private class SurfaceScreen(carContext: CarContext) : Screen(carContext) {
     }
 
     override fun onGetTemplate(): Template {
-        val strip = ActionStrip.Builder()
-        if (Prefs.remoteButtons.value) {
-            // 画面に触れない車向け: ダイヤルで選んで押せる右上のボタンで、画面の中を移動して決定する
-            strip.addAction(action(R.drawable.ic_focus_prev, R.string.remote_previous) { CarDisplayHost.remote?.previous() })
-            strip.addAction(action(R.drawable.ic_focus_next, R.string.remote_next) { CarDisplayHost.remote?.next() })
-            strip.addAction(action(R.drawable.ic_select, R.string.remote_select) { CarDisplayHost.remote?.select() })
-        }
-        // NavigationTemplate はボタンが最低 1 個必須なので、戻るは常に置く
-        strip.addAction(action(R.drawable.ic_back, R.string.back) { AweNav.back() })
-        return NavigationTemplate.Builder().setActionStrip(strip.build()).build()
-    }
-
-    private fun action(@DrawableRes icon: Int, @StringRes title: Int, onClick: () -> Unit): Action =
-        Action.Builder()
-            .setIcon(CarIcon.Builder(IconCompat.createWithResource(carContext, icon)).build())
-            .setTitle(carContext.getString(title))
-            .setOnClickListener(onClick)
+        // NavigationTemplate はボタンが最低 1 個必須なので、邪魔にならないようアイコンだけの「戻る」を置く
+        // (画面に触れると表示され、数秒で自動的に隠れる)。込み入った操作はスマホの画面で行う
+        val back = Action.Builder()
+            .setIcon(CarIcon.Builder(IconCompat.createWithResource(carContext, R.drawable.ic_back)).build())
+            .setOnClickListener { AweNav.back() }
             .build()
+        return NavigationTemplate.Builder()
+            .setActionStrip(ActionStrip.Builder().addAction(back).build())
+            .build()
+    }
 }

@@ -24,8 +24,12 @@ internal class WebSession(val key: List<Any>, val view: WebView, initialUrl: Str
     var videoStarted by mutableStateOf(false)
     var fullscreen by mutableStateOf<Pair<View, WebChromeClient.CustomViewCallback>?>(null)
 
-    /** いま動画が再生中か (ページからの playing / pause 通知) */
+    /** いま動画が再生中か (ページからの playing / pause 通知)。スマホのリモコンにも伝える */
     var playing = false
+        set(value) {
+            field = value
+            CarRemote.onPlaying(this, value)
+        }
 
     /** 車の画面が割り込み (バックカメラなど) で隠れたときに再生中だったら、戻ったときに再開する */
     var resumeOnReturn = false

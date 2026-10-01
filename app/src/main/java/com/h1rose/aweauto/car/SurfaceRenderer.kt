@@ -29,7 +29,6 @@ object CarDisplayHost {
     private var size = Triple(0, 0, 0)
 
     val touch: TouchInjector? get() = presentation?.touch
-    val remote: FocusRemote? get() = presentation?.remote
 
     fun attach(context: Context, surface: Surface, width: Int, height: Int, dpi: Int) {
         val vd = virtualDisplay

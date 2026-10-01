@@ -143,13 +143,6 @@ private fun TopBar(tab: HomeTab, onTab: (HomeTab) -> Unit) = BoxWithConstraints 
         ) {
             Icon(AweIcons.Cast, contentDescription = stringResource(R.string.cast_from_phone), tint = AweColors.OnSurface, modifier = Modifier.size(20.dp))
         }
-        Spacer(Modifier.width(10.dp))
-        Box(
-            Modifier.pressScale { AweNav.go(Route.Settings) }.size(36.dp).clip(CircleShape).background(AweColors.SurfaceHigh),
-            contentAlignment = Alignment.Center,
-        ) {
-            Icon(Icons.Filled.Settings, contentDescription = stringResource(R.string.settings), tint = AweColors.OnSurface, modifier = Modifier.size(20.dp))
-        }
     }
 }
 

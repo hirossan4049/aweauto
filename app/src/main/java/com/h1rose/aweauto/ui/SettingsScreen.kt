@@ -15,7 +15,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.pluralStringResource
@@ -43,7 +46,7 @@ import java.util.Date
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
-/** 車載画面とスマホの両方で使う設定画面。[onBack] が null なら戻るボタンを出さない */
+/** スマホの設定画面。[onBack] が null なら戻るボタンを出さない */
 @Composable
 fun SettingsScreen(onBack: (() -> Unit)?) {
     val context = LocalContext.current
@@ -51,21 +54,104 @@ fun SettingsScreen(onBack: (() -> Unit)?) {
     val cast by Prefs.cast.collectAsState()
     val offlineCache by Prefs.offlineCache.collectAsState()
     val adblock by Prefs.adblock.collectAsState()
+    val hud by Prefs.hud.collectAsState()
     val hudCustom by Prefs.hudCustom.collectAsState()
+    var details by rememberSaveable { mutableStateOf(false) }
     Column(Modifier.fillMaxSize().background(AweColors.Background)) {
         ScreenHeader(stringResource(R.string.settings), onBack)
         LazyColumn(
             contentPadding = PaddingValues(start = 24.dp, end = 24.dp, bottom = 24.dp),
             verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
-            optimizeSection()
-            castSection(context, cast)
-            networkSection(context, offlineCache)
-            hudSection(context, hudCustom)
-            shizukuSection(context)
-            if (BuildConfig.DEBUG) developerSection(context)
-            adblockSection(adblock)
-            historySection()
+            // ふだん使うものだけを上に出し、ほかは「詳細」にたたむ
+            everydaySection(context, adblock, hud)
+            item {
+                ActionRow(
+                    title = stringResource(R.string.details_title),
+                    description = stringResource(R.string.details_desc),
+                    action = stringResource(if (details) R.string.close else R.string.open),
+                    onClick = { details = !details },
+                )
+            }
+            if (details) {
+                optimizeSection()
+                castSection(context, cast)
+                networkSection(context, offlineCache)
+                hudSection(context, hudCustom)
+                shizukuSection(context)
+                adblockSection(adblock)
+                historySection()
+                if (BuildConfig.DEBUG) developerSection(context)
+            }
+        }
+    }
+}
+
+/** ふだん使う設定: アカウント・画質・広告ブロック・地図アプリ・HUD */
+private fun LazyListScope.everydaySection(context: Context, adblock: Boolean, hud: Boolean) {
+    accountSection(context)
+    item {
+        val maxHeight by Prefs.maxHeight.collectAsState()
+        ChoiceRow(
+            title = stringResource(R.string.max_height_title),
+            description = stringResource(R.string.max_height_desc),
+            options = listOf(0 to stringResource(R.string.max_height_auto), 720 to "720p", 480 to "480p", 360 to "360p"),
+            selected = maxHeight,
+            onSelect = { Prefs.setMaxHeight(it) },
+        )
+    }
+    item {
+        SettingRow(
+            title = stringResource(R.string.adblock_title),
+            description = stringResource(R.string.adblock_desc),
+            checked = adblock,
+            onChange = { Prefs.setAdblock(it) },
+        )
+    }
+    item {
+        val mapApp by Prefs.mapApp.collectAsState()
+        val navApps = remember { NavApps.installed(context) }
+        val selectedApp = remember(mapApp) { NavApps.resolve(context, mapApp) }
+        ChoiceRow(
+            title = stringResource(R.string.map_app_title),
+            description = stringResource(R.string.map_app_desc),
+            options = navApps.map { it.packageName to it.label },
+            selected = selectedApp.packageName,
+            onSelect = { pkg ->
+                Prefs.setMapApp(pkg)
+                setDemoMapPane(context, false)
+                val next = NavApps.resolve(context, pkg)
+                val current = MapPanes.provider.value
+                if (current is NativeAppMapPane) current.switchApp(next)
+                else MapPanes.register(NativeAppMapPane(context, next))
+            },
+        )
+    }
+    item {
+        val hud by Prefs.hud.collectAsState()
+        SettingRow(
+            title = stringResource(R.string.hud_title),
+            description = stringResource(R.string.hud_desc),
+            checked = hud,
+            onChange = { Prefs.setHud(it) },
+        )
+    }
+    if (hud) {
+        // 道案内を出すには通知へのアクセスが要る。許可されていなければここで案内する
+        item {
+            val listening by Hud.listening.collectAsState()
+            if (!listening) {
+                ActionRow(
+                    title = stringResource(R.string.notif_access_title),
+                    description = stringResource(R.string.notif_access_denied),
+                    action = stringResource(R.string.open_settings),
+                    onClick = {
+                        context.startActivity(
+                            Intent("android.settings.ACTION_NOTIFICATION_LISTENER_SETTINGS").addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
+                        )
+                    },
+                )
+            }
         }
     }
 }
@@ -113,7 +199,6 @@ private fun LazyListScope.accountSection(context: Context) {
 
 private fun LazyListScope.castSection(context: Context, cast: Boolean) {
     item { SectionLabel(stringResource(R.string.section_cast), AweIcons.Cast) }
-    accountSection(context)
     item {
         SettingRow(
             title = stringResource(R.string.cast_receive_title),
@@ -130,19 +215,9 @@ private fun LazyListScope.castSection(context: Context, cast: Boolean) {
     }
 }
 
-/** 画質と、番組の保存・先読み */
+/** 番組の保存・先読み */
 private fun LazyListScope.networkSection(context: Context, offlineCache: Boolean) {
-    item { SectionLabel(stringResource(R.string.section_network), AweIcons.SignalCellularAlt) }
-    item {
-        val maxHeight by Prefs.maxHeight.collectAsState()
-        ChoiceRow(
-            title = stringResource(R.string.max_height_title),
-            description = stringResource(R.string.max_height_desc),
-            options = listOf(0 to stringResource(R.string.max_height_auto), 720 to "720p", 480 to "480p", 360 to "360p"),
-            selected = maxHeight,
-            onSelect = { Prefs.setMaxHeight(it) },
-        )
-    }
+    item { SectionLabel(stringResource(R.string.section_saving), AweIcons.SignalCellularAlt) }
     item {
         val sites = StreamService.entries.filter { it.offlineCache }
             .joinToString(stringResource(R.string.list_separator)) { it.label }
@@ -179,27 +254,9 @@ private fun LazyListScope.networkSection(context: Context, offlineCache: Boolean
     }
 }
 
-/** 地図アプリの道案内を車の HUD・メーターに送る */
+/** HUD: 通知へのアクセスの状態と、好きな文字 */
 private fun LazyListScope.hudSection(context: Context, hudCustom: Boolean) {
     item { SectionLabel(stringResource(R.string.section_hud), AweIcons.Navigation) }
-    item {
-        val remote by Prefs.remoteButtons.collectAsState()
-        SettingRow(
-            title = stringResource(R.string.remote_buttons_title),
-            description = stringResource(R.string.remote_buttons_desc),
-            checked = remote,
-            onChange = { Prefs.setRemoteButtons(it) },
-        )
-    }
-    item {
-        val hud by Prefs.hud.collectAsState()
-        SettingRow(
-            title = stringResource(R.string.hud_title),
-            description = stringResource(R.string.hud_desc),
-            checked = hud,
-            onChange = { Prefs.setHud(it) },
-        )
-    }
     item {
         val listening by Hud.listening.collectAsState()
         val state by Hud.state.collectAsState()
@@ -230,28 +287,9 @@ private fun LazyListScope.hudSection(context: Context, hudCustom: Boolean) {
     if (hudCustom) item { HudTextCard() }
 }
 
-/** 地図枠 (端末の地図アプリ本体) と、それを動かす Shizuku */
+/** 地図枠を動かす Shizuku */
 private fun LazyListScope.shizukuSection(context: Context) {
     item { SectionLabel(stringResource(R.string.section_shizuku), AweIcons.Extension) }
-    item {
-        val mapApp by Prefs.mapApp.collectAsState()
-        val navApps = remember { NavApps.installed(context) }
-        val selectedApp = remember(mapApp) { NavApps.resolve(context, mapApp) }
-        ChoiceRow(
-            title = stringResource(R.string.map_app_title),
-            description = stringResource(R.string.map_app_desc),
-            options = navApps.map { it.packageName to it.label },
-            selected = selectedApp.packageName,
-            onSelect = { pkg ->
-                Prefs.setMapApp(pkg)
-                setDemoMapPane(context, false)
-                val next = NavApps.resolve(context, pkg)
-                val current = MapPanes.provider.value
-                if (current is NativeAppMapPane) current.switchApp(next)
-                else MapPanes.register(NativeAppMapPane(context, next))
-            },
-        )
-    }
     item {
         val status by ShizukuState.status.collectAsState()
         ActionRow(
@@ -319,15 +357,7 @@ private fun LazyListScope.developerSection(context: Context) {
 }
 
 private fun LazyListScope.adblockSection(adblock: Boolean) {
-    item { SectionLabel(stringResource(R.string.section_adblock), AweIcons.Shield) }
-    item {
-        SettingRow(
-            title = stringResource(R.string.adblock_title),
-            description = stringResource(R.string.adblock_desc),
-            checked = adblock,
-            onChange = { Prefs.setAdblock(it) },
-        )
-    }
+    item { SectionLabel(stringResource(R.string.section_filter_lists), AweIcons.Shield) }
     if (!adblock) return
     items(FilterList.entries) { list ->
         val lists by Prefs.filterLists.collectAsState()

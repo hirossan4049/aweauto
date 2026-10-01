@@ -16,8 +16,6 @@
     <string name="google_maps">Google マップ</string>
 
     <!-- スマホ側の画面・共有 -->
-    <string name="phone_header_title">車載画面は Android Auto 側に表示中</string>
-    <string name="phone_header_desc">設定はここで変えられます。車の画面にもすぐ反映されます</string>
     <string name="share_opening">車の画面で開きます</string>
     <string name="share_unsupported">対応している配信サイトのリンクを共有してください</string>
 
@@ -57,6 +55,10 @@
     <string name="map_not_configured_detail">MapPanes.register(…) で MapPaneProvider を登録すると、ここに表示されます</string>
 
     <!-- 設定 -->
+    <string name="details_title">詳細設定</string>
+    <string name="details_desc">サイトごとの調整・キャスト・番組の保存・HUD の文字・Shizuku・フィルタリスト・履歴</string>
+    <string name="section_saving">保存と先読み</string>
+    <string name="section_filter_lists">広告ブロックのフィルタリスト</string>
     <string name="section_optimize">表示の最適化</string>
     <string name="optimize_title">%1$s を車の画面向けに最適化</string>
     <string name="optimize_youtube">ダークテーマ・3 列グリッド・全画面プレーヤー・自動ミュート解除。広告/ショート/下タブを隠す</string>
@@ -66,7 +68,6 @@
     <string name="cast_receive_title">YouTube アプリからのキャストを受ける</string>
     <string name="cast_receive_desc">テレビコードでリンクすると、同じ Wi-Fi でなくてもキャストボタンからこの画面で再生できます</string>
 
-    <string name="section_network">通信と先読み</string>
     <string name="max_height_title">画質の上限</string>
     <string name="max_height_desc">低いほど同じ通信量で長く先読みでき、電波が弱くても止まりにくくなります</string>
     <string name="max_height_auto">自動</string>
@@ -99,7 +100,7 @@
 
     <string name="section_shizuku">拡張 (Shizuku)</string>
     <string name="map_app_title">地図枠に出すアプリ</string>
-    <string name="map_app_desc">分割表示の地図枠に、端末に入っている地図・カーナビアプリ本体を起動します。Shizuku の接続が必要です。地図枠に出ないアプリは、PC で scripts/aw.sh resizable を一度実行すると出せることがあります</string>
+    <string name="map_app_desc">動画の横の地図枠に、端末に入っている地図・カーナビアプリを出します。Shizuku が必要です</string>
     <string name="shizuku">Shizuku</string>
     <string name="shizuku_ready">接続済み</string>
     <string name="shizuku_no_permission">起動中。aweauto への許可が必要です</string>
@@ -120,7 +121,6 @@
     <string name="dev_demo_map_title">地図枠にテスト表示を出す (開発用)</string>
     <string name="dev_demo_map_desc">MapPaneProvider の描画先とタッチの受け渡しを確かめます</string>
 
-    <string name="section_adblock">広告ブロック</string>
     <string name="adblock_title">広告ブロック</string>
     <string name="adblock_desc">フィルタリストに載っているドメインへの通信を止め、YouTube の動画広告を取り除きます</string>
     <string name="filter_adguard_dns">AdGuard DNS フィルタ</string>
@@ -162,12 +162,16 @@
     <string name="cast_copied">コピーしました。テレビコードでリンク の欄に貼り付けてください</string>
     <string name="qr_code">QR コード</string>
 
-    <!-- 画面に触れない車 -->
-    <string name="remote_buttons_title">画面に触れない車向けの操作ボタン</string>
-    <string name="remote_buttons_desc">ダイヤル・タッチパッド・ボタンで操作する車向け。右上のボタンに「前へ・次へ・決定」を足して、画面の中を移動して選べるようにします</string>
-    <string name="remote_previous">前へ</string>
-    <string name="remote_next">次へ</string>
-    <string name="remote_select">決定</string>
+    <!-- スマホのリモコン -->
+    <string name="remote_car_screen">車の画面</string>
+    <string name="remote_play">再生</string>
+    <string name="remote_pause">一時停止</string>
+    <string name="remote_rewind">10 秒戻る</string>
+    <string name="remote_forward">10 秒進む</string>
+    <string name="remote_search_hint">%1$s を検索</string>
+    <string name="remote_map">地図</string>
+    <string name="remote_map_show">出す</string>
+    <string name="remote_map_hide">隠す</string>
 
     <!-- YouTube のアカウント -->
     <string name="youtube_account_title">YouTube のアカウント</string>
